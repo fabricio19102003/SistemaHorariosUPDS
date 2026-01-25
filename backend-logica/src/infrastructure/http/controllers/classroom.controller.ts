@@ -34,4 +34,33 @@ export class ClassroomController {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     }
+
+    create = async (req: Request, res: Response) => {
+        try {
+            const classroom = await this.classroomService.create(req.body);
+            res.status(201).json(classroom);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    update = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            const classroom = await this.classroomService.update(Number(id), req.body);
+            res.json(classroom);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
+    delete = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+            await this.classroomService.delete(Number(id));
+            res.status(204).send();
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 }

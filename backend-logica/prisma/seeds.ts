@@ -8,21 +8,25 @@ const prisma = new PrismaClient()
 
 const TIME_BLOCKS = [
     // Turno Mañana
-    { name: 'M1', startTime: '06:30', endTime: '07:15' },
-    { name: 'M2', startTime: '07:15', endTime: '08:00' },
-    { name: 'M3', startTime: '08:10', endTime: '08:55' },
-    { name: 'M4', startTime: '08:55', endTime: '09:40' },
-    { name: 'M5', startTime: '09:50', endTime: '10:35' },
-    { name: 'M6', startTime: '10:35', endTime: '11:20' },
-    { name: 'M7', startTime: '11:20', endTime: '12:05' },
+    { name: 'M1', startTime: '06:30', endTime: '07:15', isBreak: false },
+    { name: 'M2', startTime: '07:15', endTime: '08:00', isBreak: false },
+    { name: 'RECESO-1', startTime: '08:00', endTime: '08:10', isBreak: true }, // 10 min break
+    { name: 'M3', startTime: '08:10', endTime: '08:55', isBreak: false },
+    { name: 'M4', startTime: '08:55', endTime: '09:40', isBreak: false },
+    { name: 'RECESO-2', startTime: '09:40', endTime: '09:50', isBreak: true }, // 10 min break
+    { name: 'M5', startTime: '09:50', endTime: '10:35', isBreak: false },
+    { name: 'M6', startTime: '10:35', endTime: '11:20', isBreak: false },
+    { name: 'M7', startTime: '11:20', endTime: '12:05', isBreak: false },
     // Turno Tarde/Noche (Muestreo)
-    { name: 'N1', startTime: '17:30', endTime: '18:15' },
-    { name: 'N2', startTime: '18:15', endTime: '19:00' },
-    { name: 'N3', startTime: '19:10', endTime: '19:55' },
-    { name: 'N4', startTime: '19:55', endTime: '20:40' },
-    { name: 'N5', startTime: '20:50', endTime: '21:35' },
-    { name: 'N6', startTime: '21:35', endTime: '22:20' },
-    { name: 'N7', startTime: '22:20', endTime: '23:05' },
+    { name: 'N1', startTime: '17:30', endTime: '18:15', isBreak: false },
+    { name: 'N2', startTime: '18:15', endTime: '19:00', isBreak: false },
+    { name: 'RECESO-3', startTime: '19:00', endTime: '19:10', isBreak: true }, // 10 min break
+    { name: 'N3', startTime: '19:10', endTime: '19:55', isBreak: false },
+    { name: 'N4', startTime: '19:55', endTime: '20:40', isBreak: false },
+    { name: 'RECESO-4', startTime: '20:40', endTime: '20:50', isBreak: true }, // 10 min break
+    { name: 'N5', startTime: '20:50', endTime: '21:35', isBreak: false },
+    { name: 'N6', startTime: '21:35', endTime: '22:20', isBreak: false },
+    { name: 'N7', startTime: '22:20', endTime: '23:05', isBreak: false },
 ]
 
 const TEACHERS_LIST = [
@@ -35,27 +39,70 @@ const TEACHERS_LIST = [
 
 const SUBJECTS_LIST = [
     // 1er Semestre
-    { code: 'MED-101', name: 'Histología y Biología Celular I', credits: 5, semester: 1 },
-    { code: 'MED-102', name: 'Embriología Humana I', credits: 5, semester: 1 },
-    { code: 'MED-103', name: 'Anatomía Humana I', credits: 6, semester: 1 },
-    { code: 'MED-104', name: 'Salud Pública Comunidad I', credits: 4, semester: 1 },
-    { code: 'MED-105', name: 'Bioquímica Biología Molecular I', credits: 5, semester: 1 },
-    { code: 'MED-106', name: 'Introducción a la Salud Mental I', credits: 3, semester: 1 },
-    { code: 'MED-107', name: 'Inglés Técnico I', credits: 3, semester: 1 },
-    { code: 'MED-108', name: 'Caso Básico Clínico I', credits: 4, semester: 1 },
+    { code: 'MED-101', name: 'Anatomía Humana I', credits: 100, semester: 1 },
+    { code: 'MED-102', name: 'Histología y Biología Celular I', credits: 80, semester: 1 },
+    { code: 'MED-103', name: 'Embriología Humana I', credits: 80, semester: 1 },
+    { code: 'MED-104', name: 'Salud Pública Comunidad I', credits: 60, semester: 1 },
+    { code: 'MED-105', name: 'Bioquímica Biología Molecular I', credits: 80, semester: 1 },
+    { code: 'MED-106', name: 'Introducción a la Salud Mental I', credits: 40, semester: 1 },
+    { code: 'MED-107', name: 'Inglés Técnico I', credits: 40, semester: 1 },
+    { code: 'MED-108', name: 'Caso Básico Clínico I', credits: 60, semester: 1 },
+
+    // 2do Semestre
+    { code: 'MED-201', name: 'Anatomía Humana II', credits: 100, semester: 2 },
+    { code: 'MED-202', name: 'Histología y Biología Celular II', credits: 80, semester: 2 },
+    { code: 'MED-203', name: 'Embriología Humana II', credits: 80, semester: 2 },
+    { code: 'MED-204', name: 'Salud Pública Comunidad II', credits: 60, semester: 2 },
+    { code: 'MED-205', name: 'Bioquímica Biología Molecular II', credits: 80, semester: 2 },
+    { code: 'MED-206', name: 'Introducción a la Salud Mental II', credits: 40, semester: 2 },
+    { code: 'MED-207', name: 'Inglés Técnico II', credits: 40, semester: 2 },
+
+    // 3er Semestre
+    { code: 'MED-301', name: 'Fisiología I', credits: 80, semester: 3 },
+    { code: 'MED-302', name: 'Promoción de la Salud I', credits: 60, semester: 3 },
+    { code: 'MED-303', name: 'Inglés Técnico III', credits: 40, semester: 3 },
+    { code: 'MED-304', name: 'Cirugía I', credits: 80, semester: 3 },
+    { code: 'MED-305', name: 'Farmacología I', credits: 80, semester: 3 },
+    { code: 'MED-306', name: 'Info. Biomédica I', credits: 60, semester: 3 },
+    { code: 'MED-307', name: 'Caso Básico Clínico III', credits: 60, semester: 3 },
+
     // 4to Semestre
-    { code: 'MED-401', name: 'Microbiología y Parasitología', credits: 5, semester: 4 },
-    { code: 'MED-402', name: 'Cirugía II', credits: 5, semester: 4 },
-    { code: 'MED-403', name: 'Fisiología II', credits: 5, semester: 4 },
-    { code: 'MED-404', name: 'Farmacología II', credits: 5, semester: 4 },
-    { code: 'MED-405', name: 'Info. Biomédica 2', credits: 3, semester: 4 },
-    { code: 'MED-406', name: 'Promoción de la Salud II', credits: 4, semester: 4 },
-    { code: 'MED-407', name: 'Caso Clínico IV', credits: 4, semester: 4 },
-    // 8vo Semestre
-    { code: 'MED-801', name: 'Prácticas Hospitalarias', credits: 8, semester: 8 },
-    { code: 'MED-802', name: 'Pediatría', credits: 6, semester: 8 },
-    { code: 'MED-803', name: 'Ginecología y Obstetricia', credits: 6, semester: 8 },
-    { code: 'MED-804', name: 'Bioética Médica', credits: 3, semester: 8 },
+    { code: 'MED-401', name: 'Microbiología y Parasitología', credits: 80, semester: 4 },
+    { code: 'MED-402', name: 'Fisiología II', credits: 80, semester: 4 },
+    { code: 'MED-403', name: 'Cirugía II', credits: 80, semester: 4 },
+    { code: 'MED-404', name: 'Farmacología II', credits: 80, semester: 4 },
+    { code: 'MED-405', name: 'Promoción de la Salud II', credits: 60, semester: 4 },
+    { code: 'MED-406', name: 'Inglés Técnico IV', credits: 40, semester: 4 },
+    { code: 'MED-407', name: 'Info. Biomédica II', credits: 60, semester: 4 },
+
+    // 5to Semestre
+    { code: 'MED-501', name: 'Imagenología I', credits: 60, semester: 5 },
+    { code: 'MED-502', name: 'Medicina y Psicología', credits: 60, semester: 5 },
+    { code: 'MED-503', name: 'Propedéutica', credits: 80, semester: 5 },
+    { code: 'MED-504', name: 'Laboratorio Clínico', credits: 60, semester: 5 },
+    { code: 'MED-505', name: 'Soporte Vital', credits: 40, semester: 5 },
+    { code: 'MED-506', name: 'Epidemiología', credits: 60, semester: 5 },
+    { code: 'MED-507', name: 'Fisiopatología', credits: 80, semester: 5 },
+
+    // 6to Semestre
+    { code: 'MED-601', name: 'Neumología', credits: 60, semester: 6 },
+    { code: 'MED-602', name: 'Psiquiatría', credits: 60, semester: 6 },
+    { code: 'MED-603', name: 'Anatomía Patológica I', credits: 80, semester: 6 },
+    { code: 'MED-604', name: 'Hematología', credits: 60, semester: 6 },
+    { code: 'MED-605', name: 'Prácticas Hospitalarias (Rote 1)', credits: 120, semester: 6 },
+    { code: 'MED-606', name: 'Cardiología', credits: 80, semester: 6 },
+    { code: 'MED-607', name: 'Farmacología Terapéutica', credits: 60, semester: 6 },
+    { code: 'MED-608', name: 'Urología', credits: 60, semester: 6 },
+
+    // 7mo Semestre
+    { code: 'MED-701', name: 'Oftalmología', credits: 60, semester: 7 },
+    { code: 'MED-702', name: 'Genética Clínica', credits: 60, semester: 7 },
+    { code: 'MED-703', name: 'Dermatología', credits: 60, semester: 7 },
+    { code: 'MED-704', name: 'Nutrición Humana', credits: 40, semester: 7 },
+    { code: 'MED-705', name: 'Endocrinología', credits: 60, semester: 7 },
+    { code: 'MED-706', name: 'Anatomía Patológica II', credits: 80, semester: 7 },
+    { code: 'MED-707', name: 'Neurología', credits: 80, semester: 7 },
+    { code: 'MED-708', name: 'Gastroenterología', credits: 60, semester: 7 },
 ]
 
 async function main() {

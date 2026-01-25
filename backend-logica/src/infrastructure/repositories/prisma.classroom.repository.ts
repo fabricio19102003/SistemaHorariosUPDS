@@ -19,4 +19,23 @@ export class PrismaClassroomRepository implements IClassroomRepository {
             where: { type }
         });
     }
+
+    async create(data: Omit<Classroom, 'id'>): Promise<Classroom> {
+        return await prisma.classroom.create({
+            data
+        });
+    }
+
+    async update(id: number, data: Partial<Classroom>): Promise<Classroom> {
+        return await prisma.classroom.update({
+            where: { id },
+            data
+        });
+    }
+
+    async delete(id: number): Promise<void> {
+        await prisma.classroom.delete({
+            where: { id }
+        });
+    }
 }

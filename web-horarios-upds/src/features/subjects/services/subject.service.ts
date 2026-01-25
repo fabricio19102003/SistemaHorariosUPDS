@@ -7,6 +7,7 @@ export interface Subject {
     credits: number;
     semester: number;
     careerId: number;
+    defaultTeacherId?: string | null;
     defaultTeacher?: {
         user: {
             fullName: string;

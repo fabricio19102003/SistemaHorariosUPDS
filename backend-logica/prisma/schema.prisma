@@ -183,6 +183,7 @@ model TimeBlock {
   name      String   // Ej: "Turno Mañana A"
   startTime String   // "07:30" - Usamos string o DateTime solo hora
   endTime   String   // "09:00"
+  isBreak   Boolean  @default(false)
  
   schedules            ClassSchedule[]
   teacherUnavailabilities TeacherUnavailability[]

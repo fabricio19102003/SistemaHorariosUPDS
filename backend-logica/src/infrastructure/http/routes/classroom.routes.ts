@@ -12,5 +12,8 @@ const classroomController = new ClassroomController(classroomService);
 
 router.get('/', classroomController.getAll);
 router.get('/:id', classroomController.getOne);
+router.post('/', classroomController.create);
+router.put('/:id', classroomController.update);
+router.delete('/:id', classroomController.delete);
 
 export default router;

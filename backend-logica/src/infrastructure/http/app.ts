@@ -14,6 +14,7 @@ import classroomRoutes from './routes/classroom.routes';
 import generatorRoutes from './routes/generator.routes';
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
+import scheduleRoutes from './routes/schedule.routes';
 
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/subjects', subjectRoutes);
@@ -21,6 +22,7 @@ app.use('/api/classrooms', classroomRoutes);
 app.use('/api/generator', generatorRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/schedules', scheduleRoutes);
 
 // Basic Route
 app.get('/', (req: Request, res: Response) => {
