@@ -1,0 +1,265 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql" // O mysql, según prefieras
+  url      = env("DATABASE_URL")
+}
+
+// --------------------------------------------------------
+// 1. ENUMS (Dominios de valores restringidos)
+// --------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  ACADEMIC_COORDINATOR // Jefe de Carrera
+  TEACHER              // Docente (para ver sus horarios)
+  STUDENT              // Estudiante (lectura)
+}
+
+enum ClassroomType {
+  LABORATORY
+  THEORY_ROOM
+  AUDITORIUM
+  VIRTUAL
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ScheduleStatus {
+  DRAFT       // Borrador, no visible
+  PUBLISHED   // Visible para todos
+  CANCELLED   // Clase cancelada
+}
+
+// --------------------------------------------------------
+// 2. GESTIÓN DE ACCESO Y USUARIOS
+// --------------------------------------------------------
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique // Login principal
+  email     String?  @unique // Opcional si solo usan username
+  password  String
+  fullName  String
+  role      Role     @default(TEACHER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime?
+
+  teacherProfile Teacher?
+  // studentProfile Student? // Future relation
+  logs           AuditLog[]
+  
+  @@map("users")
+}
+
+// --------------------------------------------------------
+// 3. ESTRUCTURA ACADÉMICA (Facultades y Carreras)
+// --------------------------------------------------------
+
+model Faculty {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique // Ej: "Facultad de Ingeniería"
+  careers Career[]
+
+  @@map("faculties")
+}
+
+model Career {
+  id        Int      @id @default(autoincrement())
+  name      String   // Ej: "Ingeniería de Sistemas"
+  code      String   @unique // Ej: "SIS"
+  facultyId Int
+  faculty   Faculty  @relation(fields: [facultyId], references: [id])
+  subjects  Subject[]
+
+  @@map("careers")
+}
+
+// --------------------------------------------------------
+// 4. CATÁLOGO DE MATERIAS (El "Qué")
+// --------------------------------------------------------
+
+model Subject {
+  id          Int      @id @default(autoincrement())
+  name        String   // Ej: "Base de Datos I"
+  code        String   @unique // Ej: "SIS-101"
+  credits     Int
+  semester    Int      // Nivel semestre (1, 2, 3...)
+ 
+  careerId    Int
+  career      Career   @relation(fields: [careerId], references: [id])
+ 
+  // Docente por defecto (Opcional)
+  defaultTeacherId String?
+  defaultTeacher   Teacher? @relation("SubjectDefaultTeacher", fields: [defaultTeacherId], references: [id])
+
+  // Una materia puede programarse muchas veces en el tiempo
+  schedules   ClassSchedule[]
+
+  @@index([careerId])
+  @@index([defaultTeacherId])
+  @@map("subjects")
+}
+
+// --------------------------------------------------------
+// 5. RECURSOS (Docentes y Aulas)
+// --------------------------------------------------------
+
+model Teacher {
+  id             String   @id @default(uuid())
+  specialty      String?  // Especialidad principal
+  contractType   String?  // Tiempo completo, medio tiempo
+ 
+  // Vinculación con la cuenta de usuario para login
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+
+  // Horarios asignados
+  assignments    ClassSchedule[]
+  defaultSubjects Subject[] @relation("SubjectDefaultTeacher")
+ 
+  // Restricciones de horario (Disponibilidad)
+  unavailabilities TeacherUnavailability[]
+
+  @@map("teachers")
+}
+
+model Classroom {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique // Ej: "A-101", "Lab-3"
+  capacity    Int
+  type        ClassroomType @default(THEORY_ROOM)
+  location    String?       // Ej: "Edificio A, Piso 2"
+  hasProjector Boolean      @default(true)
+  hasAC       Boolean       @default(true)
+
+  schedules   ClassSchedule[]
+
+  @@map("classrooms")
+}
+
+// --------------------------------------------------------
+// 6. GESTIÓN DEL TIEMPO (Periodos y Bloques)
+// --------------------------------------------------------
+
+// Define el periodo académico (Ej: "Gestión 1-2026" o "Módulo Enero")
+model AcademicPeriod {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // Ej: "1-2026"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(false)
+
+  schedules ClassSchedule[]
+
+  @@map("academic_periods")
+}
+
+// Define los bloques horarios estándar (Ej: "Mañana 1" 07:30 - 09:00)
+// Esto normaliza los tiempos para evitar "07:31" vs "07:30"
+model TimeBlock {
+  id        Int      @id @default(autoincrement())
+  name      String   // Ej: "Turno Mañana A"
+  startTime String   // "07:30" - Usamos string o DateTime solo hora
+  endTime   String   // "09:00"
+ 
+  schedules            ClassSchedule[]
+  teacherUnavailabilities TeacherUnavailability[]
+
+  @@map("time_blocks")
+}
+
+// --------------------------------------------------------
+// 7. EL NÚCLEO: PROGRAMACIÓN DE HORARIOS (Transaction Table)
+// --------------------------------------------------------
+
+model ClassSchedule {
+  id String @id @default(uuid())
+
+  // ¿Qué se enseña?
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  // ¿Quién enseña?
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id])
+
+  // ¿Dónde?
+  classroomId Int
+  classroom   Classroom @relation(fields: [classroomId], references: [id])
+
+  // ¿Cuándo? (Gestión académica)
+  periodId Int
+  period   AcademicPeriod @relation(fields: [periodId], references: [id])
+ 
+  // ¿En qué horario específico?
+  dayOfWeek   DayOfWeek
+  timeBlockId Int
+  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
+
+  // Metadatos
+  groupCode String         // Ej: "G1", "A"
+  status    ScheduleStatus @default(DRAFT)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // REGLAS CRÍTICAS DE NEGOCIO (Unique Constraints)
+ 
+  // 1. Un aula no puede tener dos clases al mismo tiempo el mismo día
+  @@unique([classroomId, dayOfWeek, timeBlockId, periodId], name: "unique_room_time")
+ 
+  // 2. Un docente no puede enseñar dos materias al mismo tiempo el mismo día
+  @@unique([teacherId, dayOfWeek, timeBlockId, periodId], name: "unique_teacher_time")
+
+  // Índices para búsqueda rápida
+  @@index([periodId, subjectId])
+  @@index([teacherId])
+  @@map("class_schedules")
+}
+
+// Tabla auxiliar para marcar cuándo un docente NO puede enseñar
+model TeacherUnavailability {
+  id          Int       @id @default(autoincrement())
+  teacherId   String
+  teacher     Teacher   @relation(fields: [teacherId], references: [id])
+  dayOfWeek   DayOfWeek
+  timeBlockId Int
+  timeBlock   TimeBlock @relation(fields: [timeBlockId], references: [id])
+  reason      String?
+
+  @@map("teacher_unavailabilities")
+}
+
+// Tabla simple de auditoría para cambios críticos
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // "CREATE_SCHEDULE", "DELETE_USER"
+  details   String?  // JSON string con los detalles
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
