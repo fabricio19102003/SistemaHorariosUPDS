@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 14, "column": 0}, "map": {"version":3,"sources":["file:///D:/Trabajo/Repositorios/SistemasHorariosUPDS/SistemaHorariosUPDS/web-horarios-upds/src/app/%28dashboard%29/horario/page.tsx"],"sourcesContent":["export default function SchedulePage() {\r\n  return (\r\n    <div className=\"p-8\">\r\n      <h1 className=\"text-3xl font-bold mb-6\">Gestión de Horarios</h1>\r\n      <p>Aquí irá el constructor de horarios.</p>\r\n    </div>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,yQAAC;QAAI,WAAU;;0BACb,yQAAC;gBAAG,WAAU;0BAA0B;;;;;;0BACxC,yQAAC;0BAAE;;;;;;;;;;;;AAGT"}}]
-}
