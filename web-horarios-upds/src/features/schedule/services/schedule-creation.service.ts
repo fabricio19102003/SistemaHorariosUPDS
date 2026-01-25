@@ -78,5 +78,10 @@ export const scheduleCreationService = {
     getByPeriod: async (periodId: number) => {
         const response = await api.get(`/schedules?periodId=${periodId}`);
         return response.data;
+    },
+
+    delete: async (id: number) => {
+        const response = await api.delete(`/schedules/${id}`);
+        return response.data;
     }
 };

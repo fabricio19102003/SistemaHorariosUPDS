@@ -18,6 +18,8 @@ router.post('/blocks', scheduleController.createBlock);
 router.put('/blocks/:id', scheduleController.updateBlock);
 router.delete('/blocks/:id', scheduleController.deleteBlock);
 router.get('/active-period', scheduleController.getActivePeriod);
+router.delete('/:id', scheduleController.delete);
 router.get('/', scheduleController.getByPeriod);
 
 export default router;
+

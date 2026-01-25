@@ -149,4 +149,10 @@ export class ScheduleService {
             where: { isActive: true }
         });
     }
+
+    async delete(id: string) {
+        return await prisma.classSchedule.delete({
+            where: { id }
+        });
+    }
 }
