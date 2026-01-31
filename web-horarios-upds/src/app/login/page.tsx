@@ -47,6 +47,7 @@ export default function LoginPage() {
                             fill 
                             className="object-contain"
                             priority
+                            sizes="192px"
                         />
                     </div>
                     <h2 className="text-2xl font-bold text-upds-main">Gestión de Horarios</h2>

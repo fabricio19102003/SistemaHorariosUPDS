@@ -42,7 +42,7 @@ export class ScheduleValidationService {
             conflicts.push({
                 type: 'ROOM',
                 message: `El aula ya está ocupada en el horario solicitado.`,
-                details: roomConflicts.map(c => `Bloque ${c.timeBlock.name} ocupado por ${c.subject.name}`)
+                details: roomConflicts.map(c => `Bloque ${c.timeBlock.startTime} - ${c.timeBlock.endTime} (${c.timeBlock.name}) duplicado con ${c.subject.name} (Grupo ${c.groupCode})`)
             });
         }
 
@@ -63,7 +63,7 @@ export class ScheduleValidationService {
             conflicts.push({
                 type: 'TEACHER',
                 message: `El docente ya tiene clase asignada en ese horario.`,
-                details: teacherConflicts.map(c => `Bloque ${c.timeBlock.name} ocupado por ${c.subject.name}`)
+                details: teacherConflicts.map(c => `Bloque ${c.timeBlock.startTime} - ${c.timeBlock.endTime} (${c.timeBlock.name}) duplicado con ${c.subject.name} (Grupo ${c.groupCode})`)
             });
         }
 
@@ -81,7 +81,7 @@ export class ScheduleValidationService {
             conflicts.push({
                 type: 'TEACHER',
                 message: `El docente marcó no disponibilidad en este horario.`,
-                details: unavailabilities.map(u => `Bloque ${u.timeBlock.name}: ${u.reason || 'No disponible'}`)
+                details: unavailabilities.map(u => `Bloque ${u.timeBlock.startTime} - ${u.timeBlock.endTime}: ${u.reason || 'No disponible'}`)
             });
         }
 

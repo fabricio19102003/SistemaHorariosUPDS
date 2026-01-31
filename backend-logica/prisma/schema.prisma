@@ -191,6 +191,16 @@ model TimeBlock {
   @@map("time_blocks")
 }
 
+model ScheduleTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  shift     String?  // 'M', 'T', 'N' para filtrar/sugerir
+  blocks    Json     // [{ name: "B1", startTime: "07:00", endTime: "08:00", isBreak: false }]
+  createdAt DateTime @default(now())
+
+  @@map("schedule_templates")
+}
+
 // --------------------------------------------------------
 // 7. EL NÚCLEO: PROGRAMACIÓN DE HORARIOS (Transaction Table)
 // --------------------------------------------------------

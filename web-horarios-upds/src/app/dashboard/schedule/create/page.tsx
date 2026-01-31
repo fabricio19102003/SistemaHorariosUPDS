@@ -62,6 +62,8 @@ function GridCell({ day, blockId, isBreak, children, rowSpan = 1, onDrop }: any)
 }
 
 import ScheduleConfigModal from '@/components/schedule/ScheduleConfigModal';
+import ConflictResolutionModal, { ConflictDetail } from '@/components/schedule/ConflictResolutionModal';
+import TimeTemplateModal from '@/components/schedule/TimeTemplateModal';
 
 // --- MAIN PAGE ---
 
@@ -69,7 +71,9 @@ export default function ScheduleCreatorPage() {
     const router = useRouter();
     const { showToast } = useToast();
     const [blocks, setBlocks] = useState<any[]>([]);
-    const [subjects, setSubjects] = useState<Subject[]>([]);
+    const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
+    
+
     
     // DRAFT STATE: Stores all added items locally before saving
     type DraftItem = CreateBatchScheduleRequest & { 
@@ -88,6 +92,11 @@ export default function ScheduleCreatorPage() {
 
     // Saving State
     const [isSaving, setIsSaving] = useState(false);
+    const [conflictModalOpen, setConflictModalOpen] = useState(false);
+    const [conflicts, setConflicts] = useState<ConflictDetail[]>([]);
+    
+    // Template Modal State
+    const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
     const searchParams = useSearchParams(); 
 
@@ -97,6 +106,9 @@ export default function ScheduleCreatorPage() {
     const [selectedShift, setSelectedShift] = useState('M'); // Default Shift
     const [selectedGroup, setSelectedGroup] = useState('M1'); // Default Group (Legacy, but now driven by shift)
     const [periodId, setPeriodId] = useState<number | null>(null);
+
+    // Computed subjects based on selection
+    const subjects = useMemo(() => allSubjects.filter(s => s.semester === selectedSemester), [allSubjects, selectedSemester]);
 
     // ...
 
@@ -170,7 +182,7 @@ export default function ScheduleCreatorPage() {
                 scheduleCreationService.getActivePeriod()
             ]);
             setBlocks(blocksData);
-            setSubjects(subjectsData.filter(s => s.semester === (semesterOverride || selectedSemester)));
+            setAllSubjects(subjectsData);
             
             if (periodData) {
                 setPeriodId(periodData.id);
@@ -369,6 +381,19 @@ export default function ScheduleCreatorPage() {
 
     const handleUpdateDraft = async (data: any) => {
         if (!modalData?.draftId) return;
+        
+        // CHECK IF GROUP CHANGED -> SWITCH CONTEXT
+        if (data.groupCode && data.groupCode !== selectedGroup) {
+            setSelectedGroup(data.groupCode);
+            
+            // Extract Shift from Group (M1 -> M, T1 -> T)
+            const firstChar = data.groupCode.charAt(0);
+            if (['M', 'T', 'N'].includes(firstChar)) {
+                setSelectedShift(firstChar);
+            }
+            showToast(`Vista cambiada al grupo ${data.groupCode}`, 'info');
+        }
+
         setDraftItems(prev => prev.map(item => {
             if (item.id === modalData.draftId) {
                 return { ...item, ...data };
@@ -396,6 +421,24 @@ export default function ScheduleCreatorPage() {
             setDraftItems([]);
         } catch (error: any) {
              const msg = error.response?.data?.error || 'Error al guardar';
+             
+             // Extract JSON from validation error message if present
+             // Format: "Validation failed for subject <id>: <JSON>" 
+             // OR just raw JSON if the controller passes it (User logs show raw object "error" string might contain the prefix)
+             // The user said: "Validation failed for subject 84: [...]"
+             const conflictMatch = msg.match(/Validation failed for subject \d+: (\[.*\])/);
+             
+             if (conflictMatch && conflictMatch[1]) {
+                 try {
+                     const parsedConflicts = JSON.parse(conflictMatch[1]);
+                     setConflicts(parsedConflicts);
+                     setConflictModalOpen(true);
+                     return; // Don't show toast
+                 } catch (e) {
+                     console.error("Failed to parse conflict JSON", e);
+                 }
+             }
+
              showToast(msg, 'error');
         } finally {
             setIsSaving(false);
@@ -460,6 +503,16 @@ export default function ScheduleCreatorPage() {
         }
     };
 
+    const handleTemplateApplied = async () => {
+        // Refresh blocks from DB
+        try {
+            const updated = await scheduleCreationService.getTimeBlocks();
+            setBlocks(updated);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     return (
         <DndContext onDragEnd={handleDragEnd}>
             <div className="h-screen flex flex-col bg-gray-50 overflow-hidden select-none">
@@ -479,6 +532,17 @@ export default function ScheduleCreatorPage() {
                         </div>
                     </div>
                    <div className="flex items-center gap-3">
+                         <button
+                            onClick={() => setIsTemplateModalOpen(true)}
+                            className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg border border-indigo-100 hover:bg-indigo-100 font-bold flex items-center gap-1 transition-colors"
+                            title="Guardar o Cargar Configuración de Horas"
+                         >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                            Plantillas
+                         </button>
+
+                         <div className="w-px h-8 bg-gray-200 mx-1"></div>
+
                         <div className="flex flex-col">
                              <label className="text-[10px] font-bold text-gray-400 uppercase">Turno</label>
                              <select 
@@ -714,6 +778,19 @@ export default function ScheduleCreatorPage() {
                     suggestedGroup={suggestedGroupCode}
                 />
             )}
+
+            <ConflictResolutionModal 
+                isOpen={conflictModalOpen}
+                onClose={() => setConflictModalOpen(false)}
+                conflicts={conflicts}
+            />
+
+            <TimeTemplateModal 
+                isOpen={isTemplateModalOpen}
+                onClose={() => setIsTemplateModalOpen(false)}
+                currentBlocks={blocks}
+                onTemplateApplied={handleTemplateApplied}
+            />
 
             {/* DELETE CONFIRMATION MODAL */}
             {deleteConfirmation.isOpen && (

@@ -138,10 +138,13 @@ export class ScheduleService {
     }
 
     async deleteBlock(id: number) {
-        // Check for dependencies if needed, or let DB handle constraints
-        return await prisma.timeBlock.delete({
-            where: { id }
-        });
+        // Cascade delete manually (or rely on schema Cascade if configured)
+        // Ensure we remove dependencies first to allow deletion
+        return await prisma.$transaction([
+            prisma.classSchedule.deleteMany({ where: { timeBlockId: id } }),
+            prisma.teacherUnavailability.deleteMany({ where: { timeBlockId: id } }),
+            prisma.timeBlock.delete({ where: { id } })
+        ]);
     }
 
     async getActivePeriod() {

@@ -80,8 +80,29 @@ export const scheduleCreationService = {
         return response.data;
     },
 
-    delete: async (id: number) => {
+    delete: async (id: string) => { // Changed types to string? No ID is string UUID
         const response = await api.delete(`/schedules/${id}`);
+        return response.data;
+    },
+
+    // TEMPLATES
+    getTemplates: async () => {
+        const response = await api.get('/schedules/templates');
+        return response.data;
+    },
+
+    saveTemplate: async (data: { name: string, shift?: string, blocks: any[] }) => {
+        const response = await api.post('/schedules/templates', data);
+        return response.data;
+    },
+
+    applyTemplate: async (id: number) => {
+        const response = await api.post(`/schedules/templates/${id}/apply`);
+        return response.data;
+    },
+
+    deleteTemplate: async (id: number) => {
+        const response = await api.delete(`/schedules/templates/${id}`);
         return response.data;
     }
 };
