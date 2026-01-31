@@ -13,6 +13,15 @@ export class ScheduleTemplateController {
         }
     }
 
+    update = async (req: Request, res: Response) => {
+        try {
+            const result = await this.service.update(Number(req.params.id), req.body);
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     getAll = async (req: Request, res: Response) => {
         try {
             const result = await this.service.getAll();

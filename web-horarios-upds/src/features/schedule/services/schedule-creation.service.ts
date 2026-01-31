@@ -96,6 +96,11 @@ export const scheduleCreationService = {
         return response.data;
     },
 
+    updateTemplate: async (id: number, data: { name: string, shift?: string, blocks: any[] }) => {
+        const response = await api.put(`/schedules/templates/${id}`, data);
+        return response.data;
+    },
+
     applyTemplate: async (id: number) => {
         const response = await api.post(`/schedules/templates/${id}/apply`);
         return response.data;
@@ -103,6 +108,11 @@ export const scheduleCreationService = {
 
     deleteTemplate: async (id: number) => {
         const response = await api.delete(`/schedules/templates/${id}`);
+        return response.data;
+    },
+
+    generateProposal: async (data: { semester: number, shift: string, groupCode: string, periodId: number }) => {
+        const response = await api.post('/schedules/proposal', data);
         return response.data;
     }
 };

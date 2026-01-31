@@ -13,6 +13,8 @@ export interface Subject {
             fullName: string;
         }
     } | null;
+    category?: string | null;
+    color?: string | null;
 }
 
 export const subjectService = {

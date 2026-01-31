@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { scheduleCreationService } from '@/features/schedule/services/schedule-creation.service';
 import { useToast } from '@/context/ToastContext';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 interface TimeTemplateModalProps {
     isOpen: boolean;
@@ -19,9 +20,17 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
     // Save Form
     const [templateName, setTemplateName] = useState('');
     const [selectedShift, setSelectedShift] = useState('M');
+    const [editingId, setEditingId] = useState<number | null>(null);
 
     // Loading State
     const [isLoading, setIsLoading] = useState(false);
+
+    // Confirmation State
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        type: 'APPLY' | 'DELETE' | null;
+        id: number | null;
+    }>({ isOpen: false, type: null, id: null });
 
     useEffect(() => {
         if (isOpen && mode === 'LOAD') {
@@ -45,7 +54,7 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
         if (!templateName.trim()) return;
         setIsLoading(true);
         try {
-            await scheduleCreationService.saveTemplate({
+            const payload = {
                 name: templateName,
                 shift: selectedShift,
                 blocks: currentBlocks.map(b => ({
@@ -54,9 +63,18 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
                     isBreak: b.isBreak,
                     name: b.name
                 }))
-            });
-            showToast('Plantilla guardada', 'success');
+            };
+
+            if (editingId) {
+                await scheduleCreationService.updateTemplate(editingId, payload);
+                showToast('Plantilla actualizada', 'success');
+            } else {
+                await scheduleCreationService.saveTemplate(payload);
+                showToast('Plantilla guardada', 'success');
+            }
+            
             setMode('LOAD');
+            setEditingId(null);
             loadTemplates();
             setTemplateName('');
         } catch (error) {
@@ -66,30 +84,43 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
         }
     };
 
-    const handleApply = async (id: number) => {
-        if (!confirm('¿Estás seguro? Esto reemplazará las horas actuales.')) return;
-        
-        setIsLoading(true);
-        try {
-            await scheduleCreationService.applyTemplate(id);
-            showToast('Plantilla aplicada correctamente', 'success');
-            onTemplateApplied(); // Trigger refresh in parent
-            onClose();
-        } catch (error) {
-            showToast('Error al aplicar plantilla', 'error');
-        } finally {
-            setIsLoading(false);
-        }
+    const handleEdit = (template: any) => {
+        setTemplateName(template.name);
+        setSelectedShift(template.shift || 'M');
+        setEditingId(template.id);
+        setMode('SAVE');
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('¿Eliminar esta plantilla?')) return;
+    const handleApply = (id: number) => {
+        setConfirmState({ isOpen: true, type: 'APPLY', id });
+    };
+
+    const handleDelete = (id: number) => {
+        setConfirmState({ isOpen: true, type: 'DELETE', id });
+    };
+
+    const handleConfirmAction = async () => {
+        if (!confirmState.id || !confirmState.type) return;
+
+        const { id, type } = confirmState;
+        setIsLoading(true);
+
         try {
-            await scheduleCreationService.deleteTemplate(id);
-            setTemplates(prev => prev.filter(t => t.id !== id));
-            showToast('Plantilla eliminada', 'info');
+            if (type === 'APPLY') {
+                await scheduleCreationService.applyTemplate(id);
+                showToast('Plantilla aplicada correctamente', 'success');
+                onTemplateApplied(); 
+                onClose();
+            } else if (type === 'DELETE') {
+                await scheduleCreationService.deleteTemplate(id);
+                setTemplates(prev => prev.filter(t => t.id !== id));
+                showToast('Plantilla eliminada', 'info');
+            }
         } catch (error) {
-            showToast('Error al eliminar', 'error');
+            showToast(`Error al ${type === 'APPLY' ? 'aplicar' : 'eliminar'}`, 'error');
+        } finally {
+            setIsLoading(false);
+            setConfirmState({ isOpen: false, type: null, id: null });
         }
     };
 
@@ -114,10 +145,10 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
                         Cargar
                     </button>
                     <button 
-                        onClick={() => setMode('SAVE')} 
+                        onClick={() => { setMode('SAVE'); setEditingId(null); setTemplateName(''); }} 
                         className={`flex-1 py-1.5 text-sm font-bold rounded-md transition-all ${mode === 'SAVE' ? 'bg-white text-upds-main shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        Guardar Actual
+                        {editingId ? 'Editar Plantilla' : 'Guardar Actual'}
                     </button>
                 </div>
 
@@ -143,6 +174,13 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
                                             title="Aplicar Plantilla"
                                         >
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleEdit(template)}
+                                            className="p-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200" 
+                                            title="Editar (Sobreescribir con actual)"
+                                        >
+                                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                         </button>
                                         <button 
                                             onClick={() => handleDelete(template.id)}
@@ -188,12 +226,29 @@ export default function TimeTemplateModal({ isOpen, onClose, currentBlocks, onTe
                                 disabled={isLoading || !templateName.trim()}
                                 className="w-full bg-upds-main text-white font-bold py-2.5 rounded-lg shadow-lg hover:bg-blue-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                             >
-                                {isLoading ? 'Guardando...' : 'Guardar Plantilla'}
+                                {isLoading ? 'Guardando...' : (editingId ? 'Actualizar Plantilla' : 'Guardar Nueva Plantilla')}
                             </button>
+                            {editingId && (
+                                <p className="text-[10px] text-center text-gray-400 mt-2">
+                                    Se actualizará con la configuración de bloques actual de la pantalla visible.
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
              </div>
+
+            <ConfirmationModal 
+                isOpen={confirmState.isOpen}
+                onClose={() => setConfirmState({ ...confirmState, isOpen: false })}
+                onConfirm={handleConfirmAction}
+                title={confirmState.type === 'APPLY' ? '¿Aplicar Plantilla?' : '¿Eliminar Plantilla?'}
+                message={confirmState.type === 'APPLY' 
+                    ? 'Esta acción reemplazará la configuración de horas actual. ¿Deseas continuar?' 
+                    : 'Esta acción no se puede deshacer. ¿Deseas eliminar esta plantilla permanentemente?'}
+                confirmText={confirmState.type === 'APPLY' ? 'Sí, Aplicar' : 'Eliminar'}
+                type={confirmState.type === 'DELETE' ? 'danger' : 'warning'}
+            />
         </div>
     );
 }

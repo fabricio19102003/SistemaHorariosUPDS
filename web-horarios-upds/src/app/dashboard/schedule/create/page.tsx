@@ -64,6 +64,7 @@ function GridCell({ day, blockId, isBreak, children, rowSpan = 1, onDrop }: any)
 import ScheduleConfigModal from '@/components/schedule/ScheduleConfigModal';
 import ConflictResolutionModal, { ConflictDetail } from '@/components/schedule/ConflictResolutionModal';
 import TimeTemplateModal from '@/components/schedule/TimeTemplateModal';
+import GenerateProposalModal from '@/components/schedule/GenerateProposalModal';
 
 // --- MAIN PAGE ---
 
@@ -81,6 +82,7 @@ export default function ScheduleCreatorPage() {
         subjectName: string; 
         teacherName?: string;
         classroomName?: string;
+        subject?: Subject; // <--- ADDED THIS
     };
     const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
     
@@ -97,6 +99,9 @@ export default function ScheduleCreatorPage() {
     
     // Template Modal State
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+
+    // Generator Modal State
+    const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState(false);
 
     const searchParams = useSearchParams(); 
 
@@ -287,6 +292,7 @@ export default function ScheduleCreatorPage() {
             id: `draft-${Date.now()}`,
             subjectId: subject.id,
             subjectName: subject.name,
+            subject: subject, // <--- ADDED THIS
             dayOfWeek: cellData.day,
             timeBlockIds: [cellData.blockId],
             // Use existing config if available, otherwise default
@@ -462,11 +468,32 @@ export default function ScheduleCreatorPage() {
 
     const handleAddBlock = async () => {
         try {
+            // Calculate next start time (Last Block End Time + 10 mins)
+            let nextStartTime = '07:00';
+            let nextEndTime = '08:30';
+            
+            if (blocks.length > 0) {
+                const lastBlock = blocks[blocks.length - 1]; // Assuming sorted by time
+                // Simple string parsing since format is HH:MM
+                const [h, m] = lastBlock.endTime.split(':').map(Number);
+                const date = new Date();
+                date.setHours(h, m + 10); // +10 mins gap
+                
+                const nextH = date.getHours().toString().padStart(2, '0');
+                const nextM = date.getMinutes().toString().padStart(2, '0');
+                nextStartTime = `${nextH}:${nextM}`;
+
+                // Default duration 90 mins
+                date.setHours(date.getHours() + 1, date.getMinutes() + 30);
+                const endH = date.getHours().toString().padStart(2, '0');
+                const endM = date.getMinutes().toString().padStart(2, '0');
+                nextEndTime = `${endH}:${endM}`;
+            }
+
             await scheduleCreationService.createBlock({
-                name: 'Bloque',
-                startTime: '00:00',
-                endTime: '00:00',
-                orderIndex: blocks.length,
+                name: `Bloque ${blocks.length + 1}`,
+                startTime: nextStartTime,
+                endTime: nextEndTime,
                 isBreak: false
             });
             // Refresh
@@ -513,6 +540,13 @@ export default function ScheduleCreatorPage() {
         }
     };
 
+    const handleProposalAccepted = (items: DraftItem[]) => {
+        // Add generated items to draft
+        setDraftItems(prev => [...prev, ...items]);
+        // Maybe switch view to match the generated shift if needed?
+        // For now just add them.
+    };
+
     return (
         <DndContext onDragEnd={handleDragEnd}>
             <div className="h-screen flex flex-col bg-gray-50 overflow-hidden select-none">
@@ -540,6 +574,17 @@ export default function ScheduleCreatorPage() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                             Plantillas
                          </button>
+
+                         <div className="w-px h-8 bg-gray-200 mx-1"></div>
+
+                        <button
+                            onClick={() => setIsGeneratorModalOpen(true)}
+                            className="text-xs bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg shadow-md hover:shadow-lg hover:from-purple-700 hover:to-indigo-700 font-bold flex items-center gap-1 transition-all"
+                            title="Generar Propuesta Automática"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+                            Generar
+                        </button>
 
                          <div className="w-px h-8 bg-gray-200 mx-1"></div>
 
@@ -699,14 +744,18 @@ export default function ScheduleCreatorPage() {
                                                             `}
                                                                  onClick={() => {
                                                                      // Edit
-                                                                     const subjectObj = subjects.find(s => s.id === item.subjectId);
+                                                                     // Edit
+                                                                     const subjectObj = item.subject || allSubjects.find(s => s.id === item.subjectId) || { id: item.subjectId, name: item.subjectName, code: 'N/A', credits: 0, weeklyHours: 4, semester: 1 } as any;
                                                                      setModalData({
                                                                          draftId: item.id,
                                                                          subject: subjectObj, 
                                                                          day: item.dayOfWeek,
                                                                          startBlockId: item.timeBlockIds[0],
                                                                          semester: selectedSemester,
-                                                                         timeBlockIds: item.timeBlockIds // Added this
+                                                                         timeBlockIds: item.timeBlockIds, // Added this
+                                                                         teacherId: item.teacherId, // Pass existing teacher
+                                                                         classroomId: item.classroomId, // Pass existing room
+                                                                         groupCode: item.groupCode // Pass existing group
                                                                      });
                                                                      setIsModalOpen(true);
                                                                  }}
@@ -790,6 +839,13 @@ export default function ScheduleCreatorPage() {
                 onClose={() => setIsTemplateModalOpen(false)}
                 currentBlocks={blocks}
                 onTemplateApplied={handleTemplateApplied}
+            />
+
+            <GenerateProposalModal 
+                isOpen={isGeneratorModalOpen}
+                onClose={() => setIsGeneratorModalOpen(false)}
+                periodId={periodId || 0}
+                onProposalGenerated={handleProposalAccepted}
             />
 
             {/* DELETE CONFIRMATION MODAL */}

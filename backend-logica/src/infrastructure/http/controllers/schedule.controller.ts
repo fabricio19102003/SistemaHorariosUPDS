@@ -2,8 +2,23 @@ import { Request, Response } from 'express';
 import { ScheduleService } from '../../../application/services/schedule.service';
 import { ScheduleValidationService } from '../../../application/services/schedule-validation.service';
 
+import { ScheduleGeneratorService } from '../../../application/services/schedule-generator.service';
+
 export class ScheduleController {
-    constructor(private scheduleService: ScheduleService) { }
+    constructor(
+        private scheduleService: ScheduleService,
+        private generatorService: ScheduleGeneratorService = new ScheduleGeneratorService()
+    ) { }
+
+    generateProposal = async (req: Request, res: Response) => {
+        console.log('--- ENTERING generateProposal ---');
+        try {
+            const result = await this.generatorService.generateProposal(req.body);
+            res.json(result);
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
 
     createBatch = async (req: Request, res: Response) => {
         try {

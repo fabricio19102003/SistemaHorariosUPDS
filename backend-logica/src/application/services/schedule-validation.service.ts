@@ -22,6 +22,7 @@ export interface ValidationResult {
 export class ScheduleValidationService {
 
     async validate(request: ValidationRequest): Promise<ValidationResult> {
+        console.log('--- VALIDATING SCHEDULE ---', new Error().stack);
         const { teacherId, classroomId, periodId, dayOfWeek, timeBlockIds, excludeScheduleId } = request;
         const conflicts: ValidationResult['conflicts'] = [];
 
@@ -46,43 +47,47 @@ export class ScheduleValidationService {
             });
         }
 
-        // 2. Validar Conflicto de DOCENTE (Hard Constraint)
-        // Un docente no puede enseñar en dos lugares a la vez
-        const teacherConflicts = await prisma.classSchedule.findMany({
-            where: {
-                teacherId,
-                periodId,
-                dayOfWeek,
-                timeBlockId: { in: timeBlockIds },
-                id: excludeScheduleId ? { not: excludeScheduleId } : undefined
-            },
-            include: { timeBlock: true, subject: true }
-        });
-
-        if (teacherConflicts.length > 0) {
-            conflicts.push({
-                type: 'TEACHER',
-                message: `El docente ya tiene clase asignada en ese horario.`,
-                details: teacherConflicts.map(c => `Bloque ${c.timeBlock.startTime} - ${c.timeBlock.endTime} (${c.timeBlock.name}) duplicado con ${c.subject.name} (Grupo ${c.groupCode})`)
+        if (teacherId) {
+            // 2. Validar Conflicto de DOCENTE (Hard Constraint)
+            // Un docente no puede enseñar en dos lugares a la vez
+            const teacherConflicts = await prisma.classSchedule.findMany({
+                where: {
+                    teacherId,
+                    periodId,
+                    dayOfWeek,
+                    timeBlockId: { in: timeBlockIds },
+                    id: excludeScheduleId ? { not: excludeScheduleId } : undefined
+                },
+                include: { timeBlock: true, subject: true }
             });
+
+            if (teacherConflicts.length > 0) {
+                conflicts.push({
+                    type: 'TEACHER',
+                    message: `El docente ya tiene clase asignada en ese horario.`,
+                    details: teacherConflicts.map(c => `Bloque ${c.timeBlock.startTime} - ${c.timeBlock.endTime} (${c.timeBlock.name}) duplicado con ${c.subject.name} (Grupo ${c.groupCode})`)
+                });
+            }
         }
 
-        // 3. Validar Disponibilidad Declarada del Docente (Hard Constraint)
-        const unavailabilities = await prisma.teacherUnavailability.findMany({
-            where: {
-                teacherId,
-                dayOfWeek,
-                timeBlockId: { in: timeBlockIds }
-            },
-            include: { timeBlock: true }
-        });
-
-        if (unavailabilities.length > 0) {
-            conflicts.push({
-                type: 'TEACHER',
-                message: `El docente marcó no disponibilidad en este horario.`,
-                details: unavailabilities.map(u => `Bloque ${u.timeBlock.startTime} - ${u.timeBlock.endTime}: ${u.reason || 'No disponible'}`)
+        if (teacherId) {
+            // 3. Validar Disponibilidad Declarada del Docente (Hard Constraint)
+            const unavailabilities = await prisma.teacherUnavailability.findMany({
+                where: {
+                    teacherId,
+                    dayOfWeek,
+                    timeBlockId: { in: timeBlockIds }
+                },
+                include: { timeBlock: true }
             });
+
+            if (unavailabilities.length > 0) {
+                conflicts.push({
+                    type: 'TEACHER',
+                    message: `El docente marcó no disponibilidad en este horario.`,
+                    details: unavailabilities.map(u => `Bloque ${u.timeBlock.startTime} - ${u.timeBlock.endTime}: ${u.reason || 'No disponible'}`)
+                });
+            }
         }
 
         // 4. Validar bloques que sean RECESOS (Hard Constraint)

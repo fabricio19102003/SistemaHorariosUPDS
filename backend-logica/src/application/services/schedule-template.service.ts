@@ -12,6 +12,17 @@ export class ScheduleTemplateService {
         });
     }
 
+    async update(id: number, data: { name: string, shift?: string, blocks: any[] }) {
+        return await prisma.scheduleTemplate.update({
+            where: { id },
+            data: {
+                name: data.name,
+                shift: data.shift,
+                blocks: data.blocks
+            }
+        });
+    }
+
     async getAll() {
         return await prisma.scheduleTemplate.findMany({
             orderBy: { createdAt: 'desc' }
@@ -50,14 +61,15 @@ export class ScheduleTemplateService {
                             startTime: tBlock.startTime,
                             endTime: tBlock.endTime,
                             isBreak: !!tBlock.isBreak,
-                            // Optionally update name if needed, but user emphasized "Time"
+                            name: tBlock.name || currentBlocks[i].name
                         }
                     });
                 } else {
-                    // Current has MORE than template. Delete extras? 
-                    // Or just leave them alone? 
-                    // If we switch from 10 blocks to 5 blocks, the extra 5 might still have classes.
-                    // Let's leave them for now to be safe, or user 'delete' manually.
+                    // 3. DELETE EXTRAS (Cascade)
+                    const blockId = currentBlocks[i].id;
+                    await tx.classSchedule.deleteMany({ where: { timeBlockId: blockId } });
+                    await tx.teacherUnavailability.deleteMany({ where: { timeBlockId: blockId } });
+                    await tx.timeBlock.delete({ where: { id: blockId } });
                 }
             }
 

@@ -16,14 +16,40 @@ export default function SubjectsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState<number | null>(null);
 
+    // Categories Definition
+    const CATEGORIES = [
+        { name: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+        { name: 'BÁSICA - FUNCIONAL', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+        { name: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+        { name: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+        { name: 'MEDICINA III', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+        { name: 'CIRUGÍA I', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+        { name: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+        { name: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+        { name: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
+        { name: 'PSICOLOGÍA', color: 'bg-pink-50 text-pink-600 border-pink-100' },
+        { name: 'SALUD PÚBLICA', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+    ];
+
     // Form State
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string;
+        code: string;
+        credits: number;
+        semester: number;
+        careerId: number;
+        defaultTeacherId: string;
+        category: string;
+        color: string;
+    }>({
         name: '',
         code: '',
         credits: 80,
         semester: 1,
         careerId: 1, 
-        defaultTeacherId: ''
+        defaultTeacherId: '',
+        category: '',
+        color: ''
     });
 
     // Custom Selectors State
@@ -35,14 +61,7 @@ export default function SubjectsPage() {
     }, []);
 
     const handleEdit = (subject: Subject) => {
-        setFormData({
-            name: subject.name,
-            code: subject.code,
-            credits: subject.credits,
-            semester: subject.semester,
-            careerId: subject.careerId,
-            defaultTeacherId: subject.defaultTeacherId?.toString() || '' // Handle defaultTeacherId mismatch type if needed in service
-        });
+
         // Fix potential undefined defaultTeacherId if the backend structure is nested differently or ID is not direct
         // Ideally the subject object has defaultTeacherId or we extract it from relation. 
         // Based on previous service, `defaultTeacherId` field exists in Prisma model but frontend type might need adjustment.
@@ -69,7 +88,9 @@ export default function SubjectsPage() {
             credits: subject.credits,
             semester: subject.semester,
             careerId: subject.careerId,
-            defaultTeacherId: rawSubject.defaultTeacherId || '' 
+            defaultTeacherId: rawSubject.defaultTeacherId || '',
+            category: subject.category || '',
+            color: subject.color || ''
         });
 
         setEditingId(subject.id);
@@ -128,7 +149,7 @@ export default function SubjectsPage() {
     };
 
     const resetForm = () => {
-        setFormData({ name: '', code: '', credits: 80, semester: 1, careerId: 1, defaultTeacherId: '' });
+        setFormData({ name: '', code: '', credits: 80, semester: 1, careerId: 1, defaultTeacherId: '', category: '', color: '' });
         setTeacherSearch('');
         setEditingId(null);
     };
@@ -280,6 +301,13 @@ export default function SubjectsPage() {
                                             <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-upds-main transition-colors line-clamp-2 min-h-[3.5rem]">
                                                 {subject.name}
                                             </h3>
+
+                                            {/* Category Badge */}
+                                            {subject.category && (
+                                                <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md w-fit mb-3 border ${subject.color || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                                    {subject.category}
+                                                </div>
+                                            )}
                                             
                                             <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
                                                 <div className="flex items-center gap-1.5" title="Carga Horaria">
@@ -366,33 +394,57 @@ export default function SubjectsPage() {
                                         </div>
                                     </div>
 
-                                    {/* SECCIÓN 2: SEMESTRE VISUAL */}
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Semestre Académico</label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(sem => (
-                                                <button
-                                                    key={sem}
-                                                    type="button"
-                                                    onClick={() => setFormData({...formData, semester: sem})}
-                                                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all border-2 ${
-                                                        formData.semester === sem 
-                                                        ? 'border-upds-main bg-upds-main text-white shadow-lg scale-110' 
-                                                        : 'border-gray-100 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                                                    }`}
-                                                >
-                                                    {sem}
-                                                </button>
-                                            ))}
-                                            <div className="w-px h-10 bg-gray-200 mx-2"></div>
-                                            <div className="flex items-center gap-2 bg-gray-50 px-3 rounded-lg border border-gray-100">
-                                                <span className="text-xs font-bold text-gray-500">HORAS:</span>
-                                                <input 
-                                                    type="number" min="1" max="200" 
-                                                    className="w-12 bg-transparent text-center font-bold text-gray-800 outline-none border-b border-transparent focus:border-upds-main py-1"
-                                                    value={formData.credits}
-                                                    onChange={e => setFormData({...formData, credits: parseInt(e.target.value)})}
-                                                />
+                                    {/* SECCIÓN 2: SEMESTRE Y CATEGORÍA */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Semestre Académico</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(sem => (
+                                                    <button
+                                                        key={sem}
+                                                        type="button"
+                                                        onClick={() => setFormData({...formData, semester: sem})}
+                                                        className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all border-2 ${
+                                                            formData.semester === sem 
+                                                            ? 'border-upds-main bg-upds-main text-white shadow-md' 
+                                                            : 'border-gray-100 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        {sem}
+                                                    </button>
+                                                ))}
+                                                <div className="flex items-center gap-2 bg-gray-50 px-2 rounded-lg border border-gray-100 ml-1">
+                                                    <span className="text-[10px] font-bold text-gray-500">HRS:</span>
+                                                    <input 
+                                                        type="number" min="1" max="200" 
+                                                        className="w-10 bg-transparent text-center font-bold text-gray-800 outline-none border-b border-transparent focus:border-upds-main py-1 text-sm"
+                                                        value={formData.credits}
+                                                        onChange={e => setFormData({...formData, credits: parseInt(e.target.value)})}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                                                 Categoría
+                                                 {formData.category && <span className="ml-2 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[9px] font-normal cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFormData({...formData, category: '', color: ''})}>Borrar</span>}
+                                            </label>
+                                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto px-1 py-1 custom-scrollbar">
+                                                {CATEGORIES.map(cat => (
+                                                    <button
+                                                        key={cat.name}
+                                                        type="button"
+                                                        onClick={() => setFormData({...formData, category: cat.name, color: cat.color})}
+                                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-all ${
+                                                            formData.category === cat.name 
+                                                            ? `${cat.color} ring-2 ring-offset-1 ring-blue-400 shadow-sm scale-105` 
+                                                            : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                                                        }`}
+                                                    >
+                                                        {cat.name}
+                                                    </button>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>

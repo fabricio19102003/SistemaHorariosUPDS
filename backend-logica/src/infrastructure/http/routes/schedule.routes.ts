@@ -19,6 +19,7 @@ const templateController = new ScheduleTemplateController(templateService);
 router.post('/', scheduleController.createBatch);
 router.post('/bulk', scheduleController.createBulk);
 router.post('/validate', scheduleController.validate);
+router.post('/proposal', scheduleController.generateProposal);
 
 // Blocks
 router.get('/blocks', scheduleController.getBlocks);
@@ -29,6 +30,7 @@ router.delete('/blocks/:id', scheduleController.deleteBlock);
 // Templates
 router.get('/templates', templateController.getAll);
 router.post('/templates', templateController.save);
+router.put('/templates/:id', templateController.update);
 router.post('/templates/:id/apply', templateController.apply);
 router.delete('/templates/:id', templateController.delete);
 

@@ -8,6 +8,9 @@ const montserrat = Montserrat({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Sistema Horarios UPDS",
   description: "Sistema de gestión de horarios y docentes UPDS",
+  icons: {
+    icon: '/upds-logo.png',
+  },
 };
 
 import { ToastProvider } from "@/context/ToastContext";
