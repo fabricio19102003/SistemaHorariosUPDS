@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { authService } from '../../features/auth/services/auth.service';
 import { scheduleService, ClassSchedule } from '../../features/schedule/services/schedule.service';
+import { scheduleCreationService } from '../../features/schedule/services/schedule-creation.service';
 import ScheduleMatrix from '../../components/schedule/ScheduleMatrix';
 
 export default function DashboardPage() {
@@ -13,8 +14,11 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(false);
     const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
     
-    // Controles Filtro (Mock por ahora)
+    // Controles Filtro
     const [semester, setSemester] = useState(1);
+    const [shift, setShift] = useState<'M' | 'T' | 'N'>('M');
+    const [groupCode, setGroupCode] = useState('M1');
+    const [blocks, setBlocks] = useState<any[]>([]);
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
@@ -22,6 +26,10 @@ export default function DashboardPage() {
             router.push('/login');
         } else {
             setUser(currentUser);
+            // Fetch blocks for matrix
+            scheduleCreationService.getTimeBlocks()
+                .then(setBlocks)
+                .catch(err => console.error("Failed to load time blocks", err));
         }
     }, [router]);
 
@@ -31,9 +39,12 @@ export default function DashboardPage() {
 
     const handleGenerate = async () => {
         setLoading(true);
+        console.log('--- FRONTEND: Generating Proposal ---');
+        console.log({ semester, periodId: 1, shift, groupCode });
         try {
             // Hardcoded periodId 1 for MVP
-            const result = await scheduleService.generateProposal(semester, 1);
+            const result = await scheduleService.generateProposal(semester, 1, shift, groupCode);
+            console.log('--- FRONTEND: Result received ---', result);
             setSchedules(result.details);
             alert(`¡Generación completa! Se asignaron ${result.created} clases.`);
         } catch (error: any) {
@@ -48,7 +59,6 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header Institucional */}
             {/* Header Institucional Premium */}
             <header className="bg-upds-main/95 backdrop-blur-md text-white shadow-lg sticky top-0 z-50 border-b border-white/10">
                 <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
@@ -199,6 +209,28 @@ export default function DashboardPage() {
                                 </select>
                             </div>
                             <div className="flex-1 md:w-48">
+                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Turno</label>
+                                <select 
+                                    value={shift}
+                                    onChange={(e) => setShift(e.target.value as any)}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-upds-light outline-none"
+                                >
+                                    <option value="M">Mañana</option>
+                                    <option value="T">Tarde</option>
+                                    <option value="N">Noche</option>
+                                </select>
+                            </div>
+                            <div className="flex-1 md:w-32">
+                                <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Grupo</label>
+                                <input 
+                                    type="text" 
+                                    value={groupCode}
+                                    onChange={(e) => setGroupCode(e.target.value.toUpperCase())}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-upds-light outline-none"
+                                    placeholder="Ej. M1"
+                                />
+                            </div>
+                            <div className="flex-1 md:w-48">
                                 <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Gestión</label>
                                 <select disabled className="w-full border border-gray-300 bg-gray-50 rounded px-3 py-2 text-sm text-gray-500 cursor-not-allowed">
                                     <option>1-2026</option>
@@ -229,7 +261,7 @@ export default function DashboardPage() {
                             Propuesta Generada
                             <span className="text-sm font-normal text-gray-500 ml-2">({schedules.length} clases asignadas)</span>
                         </h3>
-                        <ScheduleMatrix schedules={schedules} />
+                        <ScheduleMatrix schedules={schedules} timeBlocks={blocks} />
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400">

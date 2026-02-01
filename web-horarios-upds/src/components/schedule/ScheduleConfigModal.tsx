@@ -142,7 +142,7 @@ function SearchableSelect({ label, options, value, onChange, placeholder, render
     );
 }
 
-export default function ScheduleConfigModal({ isOpen, onClose, onSave, initialData, blocks, suggestedGroup }: ScheduleConfigModalProps) {
+export default function ScheduleConfigModal({ isOpen, onClose, onSave, initialData, blocks, suggestedGroup, globalSchedules, currentDrafts }: any) {
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
     
@@ -237,9 +237,58 @@ export default function ScheduleConfigModal({ isOpen, onClose, onSave, initialDa
         }
     };
 
+    // --- CONFLICT DETECTION LOGIC ---
+    const checkConflict = (resourceId: string | number, type: 'TEACHER' | 'CLASSROOM') => {
+        if (!resourceId) return null;
+        
+        const timeIds = initialData.timeBlockIds && initialData.timeBlockIds.length > 0
+            ? initialData.timeBlockIds
+            : [initialData.startBlockId];
+        
+        const day = initialData.day;
+
+        // 1. Check Global DB Schedules (Backend Data)
+        const dbConflict = globalSchedules?.find((s: any) => {
+            if (initialData.draftId === `db-${s.id}`) return false;
+
+            const isSameDay = s.dayOfWeek === day;
+            const isOverlap = timeIds.includes(s.timeBlockId);
+            if (!isSameDay || !isOverlap) return false;
+
+            return type === 'TEACHER' ? s.teacherId === resourceId : s.classroomId === resourceId;
+        });
+
+        if (dbConflict) return { 
+            group: dbConflict.groupCode, 
+            subject: dbConflict.subject?.name || 'Materia desconocida',
+            semester: dbConflict.subject?.semester || '?',
+            detail: type === 'TEACHER' ? (dbConflict.classroom?.name || 'Sin Aula') : (dbConflict.teacher?.user?.fullName || 'Sin Docente')
+        };
+
+        // 2. Check Current Drafts (Frontend Data)
+        const draftConflict = currentDrafts?.find((d: any) => {
+            if (d.id === initialData.draftId) return false;
+
+            const isSameDay = d.dayOfWeek === day;
+            const isOverlap = d.timeBlockIds.some((id: number) => timeIds.includes(id));
+            if (!isSameDay || !isOverlap) return false;
+
+            return type === 'TEACHER' ? d.teacherId === resourceId : d.classroomId === resourceId;
+        });
+
+        if (draftConflict) return {
+            group: draftConflict.groupCode,
+            subject: draftConflict.subjectName,
+            semester: draftConflict.subject?.semester || '?',
+            detail: type === 'TEACHER' ? (draftConflict.classroomName || 'Sin Aula') : (draftConflict.teacherName || 'Sin Docente')
+        };
+
+        return null;
+    };
+
     if (!isOpen) return null;
 
-    const startBlock = blocks.find(b => b.id === initialData.startBlockId);
+    const startBlock = blocks.find((b: any) => b.id === initialData.startBlockId);
     
     // Quick Groups
     const quickGroups = new Set<string>();
@@ -282,7 +331,17 @@ export default function ScheduleConfigModal({ isOpen, onClose, onSave, initialDa
                                 <div className="flex flex-wrap gap-2 text-sm">
                                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-lg border border-blue-100/50 shadow-sm">
                                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                        <span className="font-bold text-gray-700">{initialData.day}</span>
+                                        <span className="font-bold text-gray-700">
+                                            {({
+                                                MONDAY: 'LUNES',
+                                                TUESDAY: 'MARTES',
+                                                WEDNESDAY: 'MIÉRCOLES',
+                                                THURSDAY: 'JUEVES',
+                                                FRIDAY: 'VIERNES',
+                                                SATURDAY: 'SÁBADO',
+                                                SUNDAY: 'DOMINGO'
+                                            } as Record<string, string>)[initialData.day] || initialData.day}
+                                        </span>
                                     </div>
                                     {startBlock && (
                                         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/60 rounded-lg border border-blue-100/50 shadow-sm">
@@ -305,17 +364,33 @@ export default function ScheduleConfigModal({ isOpen, onClose, onSave, initialDa
                                     onChange={(id) => setTeacherId(String(id))}
                                     placeholder="Seleccionar Docente..."
                                     getLabel={(t) => t.user?.fullName || 'Sin Nombre'}
-                                    renderOption={(t) => (
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-gray-800 text-sm">{t.user?.fullName}</span>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold border ${t.contractType === 'FULL_TIME' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                                    {t.contractType === 'FULL_TIME' ? 'TIEMPO COMPLETO' : 'HORARIO'}
-                                                </span>
-                                                {t.specialty && <span className="text-[10px] text-gray-400 truncate max-w-[150px]">{t.specialty}</span>}
+                                    renderOption={(t) => {
+                                        const conflict = checkConflict(t.id, 'TEACHER');
+                                        return (
+                                            <div className="flex flex-col w-full">
+                                                <div className="flex justify-between items-center w-full">
+                                                    <span className="font-bold text-gray-800 text-sm">{t.user?.fullName}</span>
+                                                    {conflict && (
+                                                        <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold border border-red-200 uppercase">
+                                                            OCUPADO
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold border ${t.contractType === 'FULL_TIME' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                                        {t.contractType === 'FULL_TIME' ? 'TIEMPO COMPLETO' : 'HORARIO'}
+                                                    </span>
+                                                    {conflict ? (
+                                                        <span className="text-[10px] text-red-500 font-bold truncate flex-1">
+                                                            {conflict.group} (Sem {conflict.semester}) - {conflict.subject} - Aula {conflict.detail}
+                                                        </span>
+                                                    ) : (
+                                                        t.specialty && <span className="text-[10px] text-gray-400 truncate max-w-[150px]">{t.specialty}</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    }}
                                 />
                                 {initialData.subject.defaultTeacherId && !teacherId && (
                                      <div className="mt-2 flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
@@ -341,17 +416,35 @@ export default function ScheduleConfigModal({ isOpen, onClose, onSave, initialDa
                                     onChange={(id) => setClassroomId(Number(id))}
                                     placeholder="Seleccionar Aula..."
                                     getLabel={(c) => c.name}
-                                    renderOption={(c) => (
-                                        <div className="flex items-center justify-between w-full">
-                                            <span className="font-bold text-gray-800">{c.name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{c.type}</span>
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${c.capacity >= 40 ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
-                                                    Cap: {c.capacity}
-                                                </span>
+                                    renderOption={(c) => {
+                                        const conflict = checkConflict(c.id, 'CLASSROOM');
+                                        return (
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex flex-col flex-1 min-w-0 mr-2">
+                                                    <span className="font-bold text-gray-800">{c.name}</span>
+                                                    {conflict && (
+                                                        <span className="text-[10px] text-red-500 font-bold truncate">
+                                                            {conflict.group} (Sem {conflict.semester}) - {conflict.subject} - {conflict.detail}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    {conflict ? (
+                                                        <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold border border-red-200">
+                                                            CHOQUE
+                                                        </span>
+                                                    ) : (
+                                                        <>
+                                                            <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">{c.type}</span>
+                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${c.capacity >= 40 ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
+                                                                Cap: {c.capacity}
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    }}
                                 />
                             </div>
                             

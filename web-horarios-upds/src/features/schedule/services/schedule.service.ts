@@ -18,8 +18,8 @@ export interface ScheduleProposal {
 }
 
 export const scheduleService = {
-    async generateProposal(semester: number, periodId: number): Promise<ScheduleProposal> {
-        const response = await api.post<ScheduleProposal>('/generator/proposal', { semester, periodId });
+    async generateProposal(semester: number, periodId: number, shift: 'M' | 'T' | 'N', groupCode: string): Promise<ScheduleProposal> {
+        const response = await api.post<ScheduleProposal>('/generator/proposal', { semester, periodId, shift, groupCode });
         return response.data;
     }
 };

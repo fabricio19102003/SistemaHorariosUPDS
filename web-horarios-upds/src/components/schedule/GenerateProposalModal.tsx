@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { scheduleCreationService } from '@/features/schedule/services/schedule-creation.service';
 import { useToast } from '@/context/ToastContext';
 
@@ -8,18 +8,26 @@ interface GenerateProposalModalProps {
     isOpen: boolean;
     onClose: () => void;
     periodId: number;
+    initialSemester: number;
     onProposalGenerated: (items: any[]) => void;
 }
 
-export default function GenerateProposalModal({ isOpen, onClose, periodId, onProposalGenerated }: GenerateProposalModalProps) {
+export default function GenerateProposalModal({ isOpen, onClose, periodId, initialSemester, onProposalGenerated }: GenerateProposalModalProps) {
     
     const { showToast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
     
     // Form
-    const [semester, setSemester] = useState(1);
+    const [semester, setSemester] = useState(initialSemester);
     const [shift, setShift] = useState('M');
     const [groupCode, setGroupCode] = useState('M1');
+
+    // Sync semester when prop changes or modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setSemester(initialSemester);
+        }
+    }, [initialSemester, isOpen]);
 
     const handleShiftChange = (newShift: string) => {
         setShift(newShift);
@@ -44,7 +52,9 @@ export default function GenerateProposalModal({ isOpen, onClose, periodId, onPro
 
             // Iterate and map to DraftItem structure if needed, or parent handles it
             // The service returns objects with .subject, .teacher, .classroom
-            const mappedItems = proposal
+            const items = proposal.details || [];
+            
+            const mappedItems = items
                 .filter((p: any) => !p.timeBlock?.isBreak) // Frontend safety filter
                 .map((p: any) => ({
                     id: p.id,

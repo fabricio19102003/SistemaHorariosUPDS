@@ -13,9 +13,20 @@ export class ScheduleController {
     generateProposal = async (req: Request, res: Response) => {
         console.log('--- ENTERING generateProposal ---');
         try {
-            const result = await this.generatorService.generateProposal(req.body);
-            res.json(result);
+            const details = await this.generatorService.generateProposal(req.body);
+            console.log(`--- CONTROLLER: Received ${details?.length} items from generator. Sending response...`);
+
+            if (!details) {
+                throw new Error("Generator returned null/undefined");
+            }
+
+            res.json({
+                processed: details.length,
+                created: details.length,
+                details: details
+            });
         } catch (error: any) {
+            console.error('--- CONTROLLER ERROR: generateProposal failed ---', error);
             res.status(400).json({ error: error.message });
         }
     }

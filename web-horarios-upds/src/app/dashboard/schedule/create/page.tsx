@@ -73,8 +73,9 @@ export default function ScheduleCreatorPage() {
     const { showToast } = useToast();
     const [blocks, setBlocks] = useState<any[]>([]);
     const [allSubjects, setAllSubjects] = useState<Subject[]>([]);
-    
-
+    // Resource State
+    const [allTeachers, setAllTeachers] = useState<Teacher[]>([]);
+    const [allClassrooms, setAllClassrooms] = useState<Classroom[]>([]);
     
     // DRAFT STATE: Stores all added items locally before saving
     type DraftItem = CreateBatchScheduleRequest & { 
@@ -85,6 +86,10 @@ export default function ScheduleCreatorPage() {
         subject?: Subject; // <--- ADDED THIS
     };
     const [draftItems, setDraftItems] = useState<DraftItem[]>([]);
+    
+    // Conflict Context
+    const [conflictingItemId, setConflictingItemId] = useState<string | null>(null);
+    const conflictingItem = useMemo(() => draftItems.find(i => i.id === conflictingItemId), [draftItems, conflictingItemId]);
     
 
 
@@ -99,6 +104,7 @@ export default function ScheduleCreatorPage() {
     
     // Template Modal State
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+    const [globalSchedules, setGlobalSchedules] = useState<any[]>([]); // For conflict checking
 
     // Generator Modal State
     const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState(false);
@@ -181,20 +187,28 @@ export default function ScheduleCreatorPage() {
 
     const loadInitialData = async (semesterOverride?: number, groupOverride?: string | null) => {
         try {
-            const [blocksData, subjectsData, periodData] = await Promise.all([
+            const [blocksData, subjectsData, periodData, teachersData, classroomsData] = await Promise.all([
                 scheduleCreationService.getTimeBlocks(),
                 subjectService.getAll(),
-                scheduleCreationService.getActivePeriod()
+                scheduleCreationService.getActivePeriod(),
+                teacherService.getAll(),
+                classroomService.getAll()
             ]);
             setBlocks(blocksData);
             setAllSubjects(subjectsData);
+            setAllTeachers(teachersData);
+            setAllClassrooms(classroomsData);
             
             if (periodData) {
                 setPeriodId(periodData.id);
 
+                // Load Global Schedules for Conflict Checking
+                const allSchedules = await scheduleCreationService.getByPeriod(periodData.id);
+                setGlobalSchedules(allSchedules);
+
                 // If editing (params present), load existing data
                 if (groupOverride) {
-                    const existingSchedules = await scheduleCreationService.getByPeriod(periodData.id);
+                    const existingSchedules = allSchedules;
                     const filtered = existingSchedules.filter((s: any) => 
                         s.subject.semester === semesterOverride && 
                         s.groupCode === groupOverride
@@ -204,16 +218,9 @@ export default function ScheduleCreatorPage() {
                         id: `db-${s.id}`, // Mark as DB item
                         subjectId: s.subjectId,
                         subjectName: s.subject.name,
+                        subject: s.subject, // Map full subject
                         dayOfWeek: s.dayOfWeek,
-                        timeBlockIds: [s.timeBlockId], // DB usually stores 1 block per row? Or mapped? Check service. 
-                        // Assuming 1-to-1 for now, or need to group contiguous? 
-                        // The GRID logic groups contiguous if I pass multiple IDs. 
-                        // But simpler: just map 1-to-1 and let the grid merge visual? 
-                        // The logic in page.tsx merges by `timeBlockIds` array. 
-                        // If DB returns individual blocks, I should probably group them if they are the same subject/teacher/day/consecutive.
-                        // For simplicity in this step, I'll map 1-to-1, but the resize logic might be weird. 
-                        // Let's rely on visual merging or keep separate?
-                        // Let's try separate first.
+                        timeBlockIds: [s.timeBlockId], 
                         teacherId: s.teacherId,
                         classroomId: s.classroomId,
                         periodId: s.periodId,
@@ -230,10 +237,8 @@ export default function ScheduleCreatorPage() {
                         const blockB = blocksData.find((bl: any) => bl.id === b.timeBlockIds[0]);
                         return (blockA?.orderIndex || 0) - (blockB?.orderIndex || 0);
                     });
-
-                    // Naive merge: if same day, subject, teacher, classroom, group AND consecutive blocks -> merge
-                    // Implementation skipped for brevity, just pushing raw for now. 
-                    // Actually, let's just push raw. The grid supports Array<ids>, so single ID is fine.
+                    
+                    // (Detailed merge logic omitted for brevity as per original, just pushing sorted)
                     setDraftItems(sorted);
                 }
             }
@@ -410,7 +415,7 @@ export default function ScheduleCreatorPage() {
         showToast('Cambio actualizado', 'success');
     };
 
-    const handleGlobalSave = async () => {
+    const handleGlobalSave = async (force: boolean = false) => {
         if (draftItems.length === 0) return;
         
         const invalidItems = draftItems.filter(i => !i.teacherId || !i.classroomId);
@@ -419,9 +424,39 @@ export default function ScheduleCreatorPage() {
             return;
         }
 
+        // MISSING SUBJECTS CHECK (Only if not forced)
+        if (!force) {
+            // Get subjects for current semester
+            const semesterSubjects = allSubjects.filter(s => s.semester === selectedSemester);
+            
+            // Get unique subject IDs currently drafted for this group
+            const currentGroupDrafts = draftItems.filter(i => i.groupCode === selectedGroup);
+            const draftedSubjectIds = new Set(currentGroupDrafts.map(i => i.subjectId));
+
+            // Find missing
+            const missing = semesterSubjects.filter(s => !draftedSubjectIds.has(s.id));
+
+            if (missing.length > 0) {
+                // Determine if we have ACTUAL blocking conflicts already in conflicts state? 
+                // No, this is a pre-check.
+                
+                const missingConflicts: ConflictDetail[] = missing.map(s => ({
+                    type: 'MISSING',
+                    message: `Falta programar: ${s.name}`,
+                    details: [String(s.id), s.name] // id, name
+                }));
+
+                setConflicts(missingConflicts);
+                setConflictModalOpen(true);
+                return;
+            }
+        }
+
         setIsSaving(true);
+        setConflictingItemId(null); // Reset
+
         try {
-            const payload = draftItems.map(({ id, subjectName, teacherName, classroomName, ...rest }) => rest);
+            const payload = draftItems.map(({ id, subjectName, teacherName, classroomName, subject, ...rest }) => rest);
             await scheduleCreationService.createBulk(payload);
             showToast('¡Horario guardado!', 'success');
             setDraftItems([]);
@@ -430,16 +465,24 @@ export default function ScheduleCreatorPage() {
              
              // Extract JSON from validation error message if present
              // Format: "Validation failed for subject <id>: <JSON>" 
-             // OR just raw JSON if the controller passes it (User logs show raw object "error" string might contain the prefix)
-             // The user said: "Validation failed for subject 84: [...]"
              const conflictMatch = msg.match(/Validation failed for subject \d+: (\[.*\])/);
              
              if (conflictMatch && conflictMatch[1]) {
                  try {
                      const parsedConflicts = JSON.parse(conflictMatch[1]);
                      setConflicts(parsedConflicts);
+                     
+                     // Helper: Identify conflicting item for Quick Fix
+                     const subjectIdMatch = msg.match(/subject (\d+):/);
+                     if (subjectIdMatch) {
+                         const sId = Number(subjectIdMatch[1]);
+                         // Find the item in drafts. Note: if duplicates exist, this picks first.
+                         const item = draftItems.find(d => d.subjectId === sId); 
+                         if (item) setConflictingItemId(item.id);
+                     }
+
                      setConflictModalOpen(true);
-                     return; // Don't show toast
+                     return; 
                  } catch (e) {
                      console.error("Failed to parse conflict JSON", e);
                  }
@@ -449,6 +492,78 @@ export default function ScheduleCreatorPage() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleAutoSchedule = (subjectId: number) => {
+        const subject = allSubjects.find(s => s.id === subjectId);
+        if (!subject) return;
+
+        // SIMPLE GREEDY ALGORITHM to find first free slot
+        // 1. Get shift blocks
+        const shiftPrefix = selectedGroup.charAt(0); // M, T, N
+        let shiftTimeBlocks = blocks; // Use all, filtering by shift convention is better but blocks are usually global per view? 
+        // In this UI, blocks are rows. If we added blocks, they are there.
+        // Let's assume all 'blocks' in state are valid candidates. (Check break)
+        
+        const validBlocks = blocks.filter(b => !b.isBreak);
+        const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']; // Match DayOfWeek type
+
+        let foundSlot: { day: string, blockId: number } | null = null;
+
+        for (const day of days) {
+            for (const block of validBlocks) {
+                 // Check if occupied by THIS group
+                 const isOccupied = draftItems.some(i => 
+                    i.groupCode === selectedGroup && 
+                    i.dayOfWeek === day && 
+                    i.timeBlockIds.includes(block.id)
+                 );
+                 if (!isOccupied) {
+                     foundSlot = { day, blockId: block.id };
+                     break;
+                 }
+            }
+            if (foundSlot) break;
+        }
+
+        if (foundSlot) {
+            const newItem: DraftItem = {
+                id: `auto-${Date.now()}`,
+                subjectId: subject.id,
+                subjectName: subject.name,
+                subject: subject,
+                dayOfWeek: foundSlot.day,
+                timeBlockIds: [foundSlot.blockId],
+                teacherId: subject.defaultTeacherId || '', 
+                classroomId: 0, // No room auto-assigned yet
+                periodId: periodId || 0,
+                groupCode: selectedGroup,
+                teacherName: subject.defaultTeacher?.user?.fullName || '---',
+                classroomName: '---'
+            };
+            setDraftItems(prev => [...prev, newItem]);
+            
+            // Remove from conflicts list
+            setConflicts(prev => prev.filter(c => c.type === 'MISSING' && c.details[0] !== String(subjectId)));
+            
+            // If no more conflicts, close modal? No, maybe user wants to do more.
+            // If no more conflicts, maybe toast
+             showToast(`Materia ${subject.name} agregada`, 'success');
+        } else {
+            showToast(`No se encontró espacio libre para ${subject.name}`, 'warning');
+        }
+    };
+
+    const handleResolveConflict = (updates: any) => {
+        if (!conflictingItemId) return;
+
+        setDraftItems(prev => prev.map(item => {
+            if (item.id === conflictingItemId) {
+                return { ...item, ...updates };
+            }
+            return item;
+        }));
+        showToast('Corrección aplicada. Intenta guardar nuevamente.', 'info');
     };
     
     const handleRemoveDraft = (draftId: string) => {
@@ -543,8 +658,30 @@ export default function ScheduleCreatorPage() {
     const handleProposalAccepted = (items: DraftItem[]) => {
         // Add generated items to draft
         setDraftItems(prev => [...prev, ...items]);
-        // Maybe switch view to match the generated shift if needed?
-        // For now just add them.
+        
+        // AUTO-SWITCH VIEW
+        if (items.length > 0) {
+            const newGroup = items[0].groupCode;
+            // Detect semester from the first item
+            const newSemester = items[0].subject?.semester;
+
+            if (newSemester && newSemester !== selectedSemester) {
+                setSelectedSemester(newSemester);
+                showToast(`Vista cambiada al Semestre ${newSemester}`, 'info');
+            }
+
+            if (newGroup && newGroup !== selectedGroup) {
+                setSelectedGroup(newGroup);
+                
+                 // Update Shift if needed
+                const firstChar = newGroup.charAt(0);
+                if (['M', 'T', 'N'].includes(firstChar)) {
+                    setSelectedShift(firstChar);
+                }
+                
+                showToast(`Vista cambiada al grupo ${newGroup}`, 'info');
+            }
+        }
     };
 
     return (
@@ -635,7 +772,7 @@ export default function ScheduleCreatorPage() {
                         <div className="w-px h-8 bg-gray-200 mx-2"></div>
 
                         <button 
-                            onClick={handleGlobalSave}
+                            onClick={() => handleGlobalSave(false)}
                             disabled={isSaving || draftItems.length === 0}
                             className={`px-4 py-2 rounded-lg font-bold text-white shadow-lg transition-all flex items-center gap-2
                                 ${draftItems.length > 0 ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-105' : 'bg-gray-300 cursor-not-allowed'}
@@ -826,6 +963,8 @@ export default function ScheduleCreatorPage() {
                     blocks={blocks}
                     selectedShift={selectedShift}
                     suggestedGroup={suggestedGroupCode}
+                    globalSchedules={globalSchedules}
+                    currentDrafts={draftItems}
                 />
             )}
 
@@ -833,6 +972,12 @@ export default function ScheduleCreatorPage() {
                 isOpen={conflictModalOpen}
                 onClose={() => setConflictModalOpen(false)}
                 conflicts={conflicts}
+                allTeachers={allTeachers}
+                allClassrooms={allClassrooms}
+                conflictingItem={conflictingItem}
+                onResolve={handleResolveConflict}
+                onAutoSchedule={handleAutoSchedule}
+                onForceSave={() => handleGlobalSave(true)}
             />
 
             <TimeTemplateModal 
@@ -846,6 +991,7 @@ export default function ScheduleCreatorPage() {
                 isOpen={isGeneratorModalOpen}
                 onClose={() => setIsGeneratorModalOpen(false)}
                 periodId={periodId || 0}
+                initialSemester={selectedSemester}
                 onProposalGenerated={handleProposalAccepted}
             />
 
