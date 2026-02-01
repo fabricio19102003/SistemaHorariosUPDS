@@ -24,11 +24,11 @@ function SidebarItem({ subject }: { subject: Subject }) {
 
     return (
         <div ref={setNodeRef} style={style} {...listeners} {...attributes} 
-             className="p-3 bg-white rounded-lg shadow-sm border border-gray-200 mb-2 cursor-grab hover:shadow-md transition-all border-l-4 border-l-upds-main">
+             className={`p-3 rounded-lg shadow-sm border mb-2 cursor-grab hover:shadow-md transition-all border-l-4 ${subject.color ? `${subject.color} border-l-current` : 'bg-white border-gray-200 border-l-upds-main'}`}>
             <h4 className="font-bold text-gray-800 text-sm truncate" title={subject.name}>{subject.name}</h4>
             <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-gray-500 font-mono bg-gray-100 px-1 rounded">{subject.code}</span>
-                <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">{subject.semester}º</span>
+                <span className="text-xs text-gray-800/70 font-mono bg-white/50 px-1 rounded border border-black/5">{subject.code}</span>
+                <span className="text-xs bg-white/50 text-gray-700 px-1.5 py-0.5 rounded-full font-bold border border-black/5">{subject.semester}º</span>
             </div>
         </div>
     );
@@ -739,8 +739,9 @@ export default function ScheduleCreatorPage() {
                                                 >
                                                     {item ? (
                                                         <div className={`w-full h-full p-1 relative group z-10 ${resizingState?.itemId === item.id ? 'opacity-80 scale-[1.01] shadow-2xl z-50' : ''}`}>
-                                                            <div className={`w-full h-full border rounded p-1 text-[10px] overflow-hidden leading-tight cursor-pointer transition-all shadow-sm outline outline-1 outline-white
-                                                                ${!item.teacherId || !item.classroomId ? 'bg-yellow-50 border-yellow-300 text-yellow-800 hover:bg-yellow-100' : 'bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200'}
+                                                            <div className={`w-full h-full border rounded p-1 text-[10px] overflow-hidden leading-tight cursor-pointer transition-all shadow-sm 
+                                                                ${!item.teacherId || !item.classroomId ? 'ring-2 ring-red-400 ring-inset border-red-300' : 'outline outline-1 outline-white'}
+                                                                ${(item.subject || allSubjects.find(s => s.id === item.subjectId))?.color ? `${(item.subject || allSubjects.find(s => s.id === item.subjectId))?.color}` : 'bg-blue-100 border-blue-300 text-blue-800 hover:bg-blue-200'}
                                                             `}
                                                                  onClick={() => {
                                                                      // Edit

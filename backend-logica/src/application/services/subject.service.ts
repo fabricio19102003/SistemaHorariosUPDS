@@ -35,7 +35,9 @@ export class SubjectService {
                 credits: parseInt(data.credits),
                 semester: parseInt(data.semester),
                 careerId: parseInt(data.careerId),
-                defaultTeacherId: data.defaultTeacherId || null
+                defaultTeacherId: data.defaultTeacherId || null,
+                category: data.category || null,
+                color: data.color || null
             },
             include: {
                 career: true,
@@ -56,7 +58,9 @@ export class SubjectService {
                 credits: parseInt(data.credits),
                 semester: parseInt(data.semester),
                 careerId: parseInt(data.careerId),
-                defaultTeacherId: data.defaultTeacherId || null
+                defaultTeacherId: data.defaultTeacherId || null,
+                category: data.category || null,
+                color: data.color || null
             },
             include: {
                 career: true,

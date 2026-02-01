@@ -280,46 +280,46 @@ export default function SubjectsPage() {
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {groupedSubjects[semester].map((subject) => (
-                                        <div key={subject.id} className="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-xl hover:border-blue-100 transition-all duration-300 relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-50 to-transparent rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-150"></div>
+                                        <div key={subject.id} className={`group rounded-2xl shadow-sm border p-6 hover:shadow-xl transition-all duration-300 relative overflow-hidden ${subject.color || 'bg-white border-gray-100 hover:border-blue-100'}`}>
+                                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/40 to-transparent rounded-bl-full -mr-10 -mt-10 transition-transform group-hover:scale-150"></div>
                                             
                                             {/* Edit Button */}
                                             <button 
                                                 onClick={() => handleEdit(subject)}
-                                                className="absolute top-4 right-4 z-20 bg-white shadow-sm border border-gray-100 p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all opacity-0 group-hover:opacity-100"
+                                                className="absolute top-4 right-4 z-20 bg-white/80 backdrop-blur-sm shadow-sm border border-black/5 p-2 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-white transition-all opacity-0 group-hover:opacity-100"
                                                 title="Editar Materia"
                                             >
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                             </button>
 
                                             <div className="flex justify-between items-start mb-4 relative pr-10">
-                                                <span className="bg-blue-50 text-blue-700 font-mono text-sm px-3 py-1.5 rounded-lg border border-blue-100 font-bold tracking-wide">
+                                                <span className="bg-white/60 text-gray-700 font-mono text-sm px-3 py-1.5 rounded-lg border border-black/5 font-bold tracking-wide backdrop-blur-sm">
                                                     {subject.code}
                                                 </span>
                                             </div>
                                             
-                                            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-upds-main transition-colors line-clamp-2 min-h-[3.5rem]">
+                                            <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:opacity-80 transition-opacity line-clamp-2 min-h-[3.5rem] mix-blend-multiply">
                                                 {subject.name}
                                             </h3>
 
                                             {/* Category Badge */}
                                             {subject.category && (
-                                                <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md w-fit mb-3 border ${subject.color || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                                <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md w-fit mb-3 border ${subject.color ? 'bg-white/80 border-transparent shadow-sm text-gray-800' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
                                                     {subject.category}
                                                 </div>
                                             )}
                                             
-                                            <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
+                                            <div className="flex items-center gap-4 text-sm text-gray-500 mb-6 font-medium">
                                                 <div className="flex items-center gap-1.5" title="Carga Horaria">
                                                     <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                    <span className="font-medium">{subject.credits} Horas</span>
+                                                    <span className="text-gray-700/80">{subject.credits} Horas</span>
                                                 </div>
                                             </div>
 
-                                            <div className="pt-4 border-t border-gray-100 relative">
-                                                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">Docente Titular</p>
+                                            <div className="pt-4 border-t border-black/5 relative">
+                                                <p className="text-[10px] uppercase tracking-wider font-bold text-gray-500/70 mb-2">Docente Titular</p>
                                                 {subject.defaultTeacher ? (
-                                                    <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-xl group-hover:bg-blue-50/50 transition-colors">
+                                                    <div className="flex items-center gap-3 bg-white/60 p-2 rounded-xl backdrop-blur-sm border border-black/5 transition-colors">
                                                         <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-upds-main to-blue-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                                                             {subject.defaultTeacher.user.fullName.charAt(0)}
                                                         </div>
@@ -330,8 +330,8 @@ export default function SubjectsPage() {
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-center gap-2 text-gray-400 py-1 italic">
-                                                        <div className="h-8 w-8 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">?</div>
-                                                        <span className="text-sm">Sin asignar</span>
+                                                        <div className="h-8 w-8 rounded-full bg-black/5 border-2 border-dashed border-black/10 flex items-center justify-center">?</div>
+                                                        <span className="text-sm font-medium text-gray-500/60">Sin asignar</span>
                                                     </div>
                                                 )}
                                             </div>

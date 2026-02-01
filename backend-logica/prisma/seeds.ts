@@ -39,70 +39,72 @@ const TEACHERS_LIST = [
 
 const SUBJECTS_LIST = [
     // 1er Semestre
-    { code: 'MED-101', name: 'Anatomía Humana I', credits: 100, semester: 1 },
-    { code: 'MED-102', name: 'Histología y Biología Celular I', credits: 80, semester: 1 },
-    { code: 'MED-103', name: 'Embriología Humana I', credits: 80, semester: 1 },
-    { code: 'MED-104', name: 'Salud Pública Comunidad I', credits: 60, semester: 1 },
-    { code: 'MED-105', name: 'Bioquímica Biología Molecular I', credits: 80, semester: 1 },
-    { code: 'MED-106', name: 'Introducción a la Salud Mental I', credits: 40, semester: 1 },
-    { code: 'MED-107', name: 'Inglés Técnico I', credits: 40, semester: 1 },
-    { code: 'MED-108', name: 'Caso Básico Clínico I', credits: 60, semester: 1 },
+    { code: 'MMF-0110', name: 'ANATOMÍA HUMANA I', credits: 100, semester: 1, category: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MMF-0115', name: 'EMBRIOLOGÍA GENERAL', credits: 80, semester: 1, category: 'BÁSICA - FUNCIONAL', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MMF-0120', name: 'BIOLOGÍA CELULAR I', credits: 80, semester: 1, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MMF-0130', name: 'BIOQUÍMICA I', credits: 80, semester: 1, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'SCP-0140', name: 'PRIMEROS AUXILIOS COMUNITARIO I', credits: 60, semester: 1, category: 'CIRUGÍA I', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+    { code: 'PSI-0150', name: 'INTRODUCCIÓN A LA PSICOLOGÍA MÉDICA I', credits: 40, semester: 1, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { code: 'CREC-0160', name: 'CASO BÁSICO CLÍNICO I', credits: 60, semester: 1, category: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+    { code: 'LIN-0135', name: 'INGLÉS I (TÉCNICO I)', credits: 40, semester: 1, category: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
 
     // 2do Semestre
-    { code: 'MED-201', name: 'Anatomía Humana II', credits: 100, semester: 2 },
-    { code: 'MED-202', name: 'Histología y Biología Celular II', credits: 80, semester: 2 },
-    { code: 'MED-203', name: 'Embriología Humana II', credits: 80, semester: 2 },
-    { code: 'MED-204', name: 'Salud Pública Comunidad II', credits: 60, semester: 2 },
-    { code: 'MED-205', name: 'Bioquímica Biología Molecular II', credits: 80, semester: 2 },
-    { code: 'MED-206', name: 'Introducción a la Salud Mental II', credits: 40, semester: 2 },
-    { code: 'MED-207', name: 'Inglés Técnico II', credits: 40, semester: 2 },
+    { code: 'MMF-0210', name: 'ANATOMÍA HUMANA II', credits: 100, semester: 2, category: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MMF-0215', name: 'HISTOLOGÍA', credits: 80, semester: 2, category: 'BÁSICA - FUNCIONAL', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MMF-0225', name: 'BIOLOGÍA CELULAR II', credits: 80, semester: 2, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MMF-0235', name: 'BIOQUÍMICA II', credits: 80, semester: 2, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'SCP-0240', name: 'PRIMEROS AUXILIOS COMUNITARIO II', credits: 60, semester: 2, category: 'CIRUGÍA I', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+    { code: 'PSI-0250', name: 'INTRODUCCIÓN A LA PSICOLOGÍA MÉDICA II', credits: 40, semester: 2, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { code: 'CREC-0260', name: 'CASO BÁSICO CLÍNICO II', credits: 60, semester: 2, category: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+    { code: 'LIN-0330', name: 'INGLÉS II (TÉCNICO II)', credits: 40, semester: 2, category: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
 
     // 3er Semestre
-    { code: 'MED-301', name: 'Fisiología I', credits: 80, semester: 3 },
-    { code: 'MED-302', name: 'Promoción de la Salud I', credits: 60, semester: 3 },
-    { code: 'MED-303', name: 'Inglés Técnico III', credits: 40, semester: 3 },
-    { code: 'MED-304', name: 'Cirugía I', credits: 80, semester: 3 },
-    { code: 'MED-305', name: 'Farmacología I', credits: 80, semester: 3 },
-    { code: 'MED-306', name: 'Info. Biomédica I', credits: 60, semester: 3 },
-    { code: 'MED-307', name: 'Caso Básico Clínico III', credits: 60, semester: 3 },
+    { code: 'MMF-0310', name: 'ANATOMÍA HUMANA III', credits: 100, semester: 3, category: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'CMI-0320', name: 'INTRODUCCIÓN A LA CLÍNICA I', credits: 80, semester: 3, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MMF-0335', name: 'BIOQUÍMICA III', credits: 80, semester: 3, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'SCP-0340', name: 'PROPEDÉUTICA Y EPIDEMIOLOGÍA I', credits: 60, semester: 3, category: 'MEDICINA III', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+    { code: 'SCP-0350', name: 'INFORMÁTICA BIOMÉDICA I', credits: 60, semester: 3, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { code: 'CBC-0300', name: 'CASO BÁSICO CLÍNICO III', credits: 60, semester: 3, category: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+    { code: 'LIN-0430', name: 'INGLÉS III (TÉCNICO III)', credits: 40, semester: 3, category: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
 
     // 4to Semestre
-    { code: 'MED-401', name: 'Microbiología y Parasitología', credits: 80, semester: 4 },
-    { code: 'MED-402', name: 'Fisiología II', credits: 80, semester: 4 },
-    { code: 'MED-403', name: 'Cirugía II', credits: 80, semester: 4 },
-    { code: 'MED-404', name: 'Farmacología II', credits: 80, semester: 4 },
-    { code: 'MED-405', name: 'Promoción de la Salud II', credits: 60, semester: 4 },
-    { code: 'MED-406', name: 'Inglés Técnico IV', credits: 40, semester: 4 },
-    { code: 'MED-407', name: 'Info. Biomédica II', credits: 60, semester: 4 },
+    { code: 'MMF-0410', name: 'FISIOLOGÍA I', credits: 80, semester: 4, category: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'CMI-0420', name: 'INTRODUCCIÓN A LA CLÍNICA II', credits: 80, semester: 4, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MMF-0435', name: 'MICROBIOLOGÍA Y PARASITOLOGÍA', credits: 80, semester: 4, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'SCP-0440', name: 'PROPEDÉUTICA Y EPIDEMIOLOGÍA II', credits: 80, semester: 4, category: 'MEDICINA III', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+    { code: 'SCP-0450', name: 'INFORMÁTICA BIOMÉDICA II', credits: 60, semester: 4, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { code: 'CBC-0400', name: 'CASO INTEGRADO CLÍNICO IV', credits: 60, semester: 4, category: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+    { code: 'LIN-0440', name: 'INGLÉS IV (CONVERSACIONAL I)', credits: 40, semester: 4, category: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
 
     // 5to Semestre
-    { code: 'MED-501', name: 'Imagenología I', credits: 60, semester: 5 },
-    { code: 'MED-502', name: 'Medicina y Psicología', credits: 60, semester: 5 },
-    { code: 'MED-503', name: 'Propedéutica', credits: 80, semester: 5 },
-    { code: 'MED-504', name: 'Laboratorio Clínico', credits: 60, semester: 5 },
-    { code: 'MED-505', name: 'Soporte Vital', credits: 40, semester: 5 },
-    { code: 'MED-506', name: 'Epidemiología', credits: 60, semester: 5 },
-    { code: 'MED-507', name: 'Fisiopatología', credits: 80, semester: 5 },
+    { code: 'MED-0510', name: 'PATOLOGÍA GENERAL Y FISIOPATOLOGÍA', credits: 80, semester: 5, category: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MED-0515', name: 'FISIOLOGÍA II', credits: 80, semester: 5, category: 'BÁSICA - FUNCIONAL', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MED-0520', name: 'SEMIOLOGÍA', credits: 80, semester: 5, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MED-0530', name: 'PSICOLOGÍA Y SALUD MENTAL', credits: 60, semester: 5, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'PSI-0540', name: 'EPIDEMIOLOGÍA E INVESTIGACIÓN', credits: 60, semester: 5, category: 'MEDICINA III', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+    { code: 'SVB-0550', name: 'SOPORTE VITAL BÁSICO', credits: 40, semester: 5, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
 
     // 6to Semestre
-    { code: 'MED-601', name: 'Neumología', credits: 60, semester: 6 },
-    { code: 'MED-602', name: 'Psiquiatría', credits: 60, semester: 6 },
-    { code: 'MED-603', name: 'Anatomía Patológica I', credits: 80, semester: 6 },
-    { code: 'MED-604', name: 'Hematología', credits: 60, semester: 6 },
-    { code: 'MED-605', name: 'Prácticas Hospitalarias (Rote 1)', credits: 120, semester: 6 },
-    { code: 'MED-606', name: 'Cardiología', credits: 80, semester: 6 },
-    { code: 'MED-607', name: 'Farmacología Terapéutica', credits: 60, semester: 6 },
-    { code: 'MED-608', name: 'Urología', credits: 60, semester: 6 },
+    { code: 'PAT-0605', name: 'ANATOMÍA PATOLÓGICA', credits: 80, semester: 6, category: 'BÁSICA - MORFOLÓGICA', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MED-0610', name: 'FARMACOLOGÍA I', credits: 80, semester: 6, category: 'BÁSICA - FUNCIONAL', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+    { code: 'MED-0620', name: 'DIAGNÓSTICO POR IMÁGENES', credits: 60, semester: 6, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MED-0630', name: 'OTORRINOLARINGOLOGÍA', credits: 60, semester: 6, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'MED-0640', name: 'DERMATOLOGÍA', credits: 60, semester: 6, category: 'MEDICINA III', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+    { code: 'MED-0675', name: 'FARMACOLOGÍA II', credits: 80, semester: 6, category: 'CIRUGÍA I', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+    { code: 'MED-0710-PRE', name: 'OFTALMOLOGÍA', credits: 60, semester: 6, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { code: 'MED-0780-PRE', name: 'INFECTOLOGÍA', credits: 60, semester: 6, category: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+    { code: 'MED-0640-NEF', name: 'NEFROLOGÍA', credits: 60, semester: 6, category: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
 
     // 7mo Semestre
-    { code: 'MED-701', name: 'Oftalmología', credits: 60, semester: 7 },
-    { code: 'MED-702', name: 'Genética Clínica', credits: 60, semester: 7 },
-    { code: 'MED-703', name: 'Dermatología', credits: 60, semester: 7 },
-    { code: 'MED-704', name: 'Nutrición Humana', credits: 40, semester: 7 },
-    { code: 'MED-705', name: 'Endocrinología', credits: 60, semester: 7 },
-    { code: 'MED-706', name: 'Anatomía Patológica II', credits: 80, semester: 7 },
-    { code: 'MED-707', name: 'Neurología', credits: 80, semester: 7 },
-    { code: 'MED-708', name: 'Gastroenterología', credits: 60, semester: 7 },
+    { code: 'MMF-0705', name: 'ANATOMÍA PATOLÓGICA II', credits: 80, semester: 7, category: 'MEDICINA I', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+    { code: 'MED-0710', name: 'GASTROENTEROLOGÍA', credits: 60, semester: 7, category: 'MEDICINA II', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+    { code: 'MED-0720', name: 'DERMATOLOGÍA CLÍNICA', credits: 60, semester: 7, category: 'MEDICINA III', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+    { code: 'MED-0730', name: 'ENDOCRINOLOGÍA', credits: 60, semester: 7, category: 'CIRUGÍA I', color: 'bg-pink-100 text-pink-800 border-pink-200' },
+    { code: 'MED-0740', name: 'OFTALMOLOGÍA CLÍNICA', credits: 60, semester: 7, category: 'CIRUGÍA II', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+    { code: 'MED-0780', name: 'INFECTOLOGÍA CLÍNICA', credits: 60, semester: 7, category: 'CIRUGÍA III', color: 'bg-lime-100 text-lime-800 border-lime-200' },
+    { code: 'MED-0770', name: 'GENÉTICA CLÍNICA', credits: 60, semester: 7, category: 'ÉTICA', color: 'bg-amber-50 text-amber-800 border-amber-200' },
+    { code: 'MED-0660', name: 'HEMATOLOGÍA', credits: 60, semester: 7, category: 'PSICOLOGÍA', color: 'bg-pink-50 text-pink-600 border-pink-100' },
+    { code: 'SCP-0780', name: 'ANTROPOLOGÍA MÉDICA', credits: 40, semester: 7, category: 'SALUD PÚBLICA', color: 'bg-violet-100 text-violet-800 border-violet-200' },
 ]
 
 async function main() {
@@ -182,6 +184,30 @@ async function main() {
         }
     })
     console.log('🛡️  Superadmin creado (user: superadmin).')
+
+    // 5.6 Crear Test User: Pedro (SUPERADMIN)
+    await prisma.user.create({
+        data: {
+            fullName: 'Pedro',
+            username: 'pedro',
+            email: 'pedro@upds.edu.bo',
+            password: bcrypt.hashSync('admin123', 10),
+            role: Role.SUPERADMIN
+        }
+    })
+    console.log('🛡️  Usuario Test creado: Pedro (SUPERADMIN)')
+
+    // 5.7 Crear Test User: Fabricio (ADMIN)
+    await prisma.user.create({
+        data: {
+            fullName: 'Fabricio',
+            username: 'fabricio',
+            email: 'fabricio@upds.edu.bo',
+            password: bcrypt.hashSync('admin123', 10),
+            role: Role.ADMIN
+        }
+    })
+    console.log('🛡️  Usuario Test creado: Fabricio (ADMIN)')
 
     // 6. Crear Docentes y sus Usuarios
     for (const teacherName of TEACHERS_LIST) {

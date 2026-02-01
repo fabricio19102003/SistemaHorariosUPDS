@@ -248,7 +248,7 @@ export default function ScheduleDashboardPage() {
                                                     return (
                                                         <td key={day} className="border-r border-gray-100 last:border-r-0 relative h-24 p-1 align-top group/cell">
                                                             {item ? (
-                                                                <div className="h-full w-full bg-blue-50 border border-blue-100 rounded-lg p-2 hover:shadow-md transition-all hover:scale-[1.02] cursor-default border-l-4 border-l-upds-main relative group/item">
+                                                                <div className={`h-full w-full rounded-lg p-2 hover:shadow-md transition-all hover:scale-[1.02] cursor-default border border-l-4 relative group/item ${item.subject.color ? `${item.subject.color} border-l-current` : 'bg-blue-50 border-blue-100 border-l-upds-main'}`}>
                                                                     <div className="font-bold text-gray-800 text-xs mb-1 line-clamp-2" title={item.subject.name}>
                                                                         {item.subject.name}
                                                                     </div>

@@ -95,7 +95,7 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-6 text-center text-xs text-gray-400">
-                    © 2026 UPDS - Sistema de Gestión Académica
+                    © 2026 UPDS - Sistema de Gestión de Horarios
                 </div>
             </div>
         </div>
