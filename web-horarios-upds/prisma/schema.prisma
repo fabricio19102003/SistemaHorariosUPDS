@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // O mysql, según prefieras
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -47,21 +47,29 @@ enum ScheduleStatus {
 // 2. GESTIÓN DE ACCESO Y USUARIOS
 // --------------------------------------------------------
 
+enum Role {
+  SUPERADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
 model User {
   id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // Hash
+  username  String   @unique // Login principal
+  email     String?  @unique // Opcional si solo usan username
+  password  String
   fullName  String
-  role      UserRole @default(TEACHER)
+  role      Role     @default(TEACHER)
   isActive  Boolean  @default(true)
-
-  // Relaciones
-  teacherProfile Teacher? // Solo si el usuario es docente
-  logs           AuditLog[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  lastLogin DateTime?
 
+  teacherProfile Teacher?
+  // studentProfile Student? // Future relation
+  logs           AuditLog[]
+  
   @@map("users")
 }
 
@@ -97,15 +105,23 @@ model Subject {
   name        String   // Ej: "Base de Datos I"
   code        String   @unique // Ej: "SIS-101"
   credits     Int
+  weeklyHours Int      @default(4) // Carga horaria semanal (bloques de 45-90 min)
   semester    Int      // Nivel semestre (1, 2, 3...)
-
+  category    String?  // Área/Categoría curricular (Ej: "BÁSICA - MORFOLÓGICA")
+  color       String?  // Color identificador (Ej: "#FEF3C7")
+ 
   careerId    Int
   career      Career   @relation(fields: [careerId], references: [id])
+ 
+  // Docente por defecto (Opcional)
+  defaultTeacherId String?
+  defaultTeacher   Teacher? @relation("SubjectDefaultTeacher", fields: [defaultTeacherId], references: [id])
 
   // Una materia puede programarse muchas veces en el tiempo
   schedules   ClassSchedule[]
 
   @@index([careerId])
+  @@index([defaultTeacherId])
   @@map("subjects")
 }
 
@@ -117,14 +133,15 @@ model Teacher {
   id             String   @id @default(uuid())
   specialty      String?  // Especialidad principal
   contractType   String?  // Tiempo completo, medio tiempo
-
+ 
   // Vinculación con la cuenta de usuario para login
   userId         String   @unique
   user           User     @relation(fields: [userId], references: [id])
 
   // Horarios asignados
   assignments    ClassSchedule[]
-
+  defaultSubjects Subject[] @relation("SubjectDefaultTeacher")
+ 
   // Restricciones de horario (Disponibilidad)
   unavailabilities TeacherUnavailability[]
 
@@ -169,11 +186,22 @@ model TimeBlock {
   name      String   // Ej: "Turno Mañana A"
   startTime String   // "07:30" - Usamos string o DateTime solo hora
   endTime   String   // "09:00"
-
-  schedules ClassSchedule[]
-  unavailabilities TeacherUnavailability[]
+  isBreak   Boolean  @default(false)
+ 
+  schedules            ClassSchedule[]
+  teacherUnavailabilities TeacherUnavailability[]
 
   @@map("time_blocks")
+}
+
+model ScheduleTemplate {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  shift     String?  // 'M', 'T', 'N' para filtrar/sugerir
+  blocks    Json     // [{ name: "B1", startTime: "07:00", endTime: "08:00", isBreak: false }]
+  createdAt DateTime @default(now())
+
+  @@map("schedule_templates")
 }
 
 // --------------------------------------------------------
@@ -188,8 +216,8 @@ model ClassSchedule {
   subject   Subject @relation(fields: [subjectId], references: [id])
 
   // ¿Quién enseña?
-  teacherId String
-  teacher   Teacher @relation(fields: [teacherId], references: [id])
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
 
   // ¿Dónde?
   classroomId Int
@@ -198,7 +226,7 @@ model ClassSchedule {
   // ¿Cuándo? (Gestión académica)
   periodId Int
   period   AcademicPeriod @relation(fields: [periodId], references: [id])
-
+ 
   // ¿En qué horario específico?
   dayOfWeek   DayOfWeek
   timeBlockId Int
@@ -207,15 +235,15 @@ model ClassSchedule {
   // Metadatos
   groupCode String         // Ej: "G1", "A"
   status    ScheduleStatus @default(DRAFT)
-
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // REGLAS CRÍTICAS DE NEGOCIO (Unique Constraints)
-
+ 
   // 1. Un aula no puede tener dos clases al mismo tiempo el mismo día
   @@unique([classroomId, dayOfWeek, timeBlockId, periodId], name: "unique_room_time")
-
+ 
   // 2. Un docente no puede enseñar dos materias al mismo tiempo el mismo día
   @@unique([teacherId, dayOfWeek, timeBlockId, periodId], name: "unique_teacher_time")
 

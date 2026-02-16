@@ -8,6 +8,7 @@ export const requireRole = (allowedRoles: string[]) => {
         }
 
         if (!allowedRoles.includes(req.user.role)) {
+            console.error(`Role mismatch! User role: ${req.user.role}, Allowed: ${allowedRoles}`);
             return res.status(403).json({ error: 'Acceso prohibido. Rol insuficiente.' });
         }
 
