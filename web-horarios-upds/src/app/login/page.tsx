@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { authService } from '../../features/auth/services/auth.service';
+import { createSession } from '@/features/auth/actions';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -23,6 +24,9 @@ export default function LoginPage() {
             // Guardar sesión básica (Mejorar con Context/Zustand luego)
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
+
+            // Set server-side session
+            await createSession(data.token);
 
             router.push('/dashboard');
         } catch (err: any) {

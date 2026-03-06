@@ -17,8 +17,10 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 
     jwt.verify(token, SECRET, (err: any, user: any) => {
         if (err) {
-            return res.status(403).json({ error: 'Token inválido o expirado.' });
+            console.error('JWT Verification Error:', err);
+            return res.status(403).json({ error: 'Token inválido o expirado.', details: err.message });
         }
+        console.log('User authenticated:', user.username, user.role);
         req.user = user;
         next();
     });

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { classroomService, Classroom } from '@/features/classrooms/services/classroom.service';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
+import { ClassroomsTabs } from '@/components/dashboard/classrooms/ClassroomsTabs';
 
 export default function ClassroomsPage() {
     const router = useRouter();
@@ -129,6 +130,8 @@ export default function ClassroomsPage() {
     return (
         <div className="min-h-screen bg-gray-50/50 p-6">
             <div className="max-w-7xl mx-auto">
+                <ClassroomsTabs />
+                
                 {/* HEADERS */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                     <div>
